@@ -180,7 +180,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
           {
             name: itemForm.name,
             description: itemForm.description,
-            price: parseFloat(itemForm.price),
+            price: itemForm.price === "" ? null : parseFloat(itemForm.price),
             category_id: itemForm.category_id,
             is_available: itemForm.is_available,
             image_url,
@@ -223,7 +223,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
     setEditForm({
       name: item.name,
       description: item.description || "",
-      price: item.price.toString(),
+      price: (item.price ?? 0).toString(),
       category_id: item.category_id,
       is_available: item.is_available,
       image: null,
@@ -282,7 +282,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
         .update({
           name: editForm.name,
           description: editForm.description,
-          price: parseFloat(editForm.price),
+          price: editForm.price === "" ? null : parseFloat(editForm.price),
           category_id: editForm.category_id,
           is_available: editForm.is_available,
           image_url,
@@ -486,18 +486,18 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="itemPrice">Price *</Label>
-                      <Input
-                        id="itemPrice"
-                        type="number"
-                        step="0.01"
-                        value={itemForm.price}
-                        onChange={(e) => setItemForm(prev => ({ ...prev, price: e.target.value }))}
-                        placeholder="12.99"
-                        required
-                      />
-                    </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="itemPrice">Price (USD) *</Label>
+                        <Input
+                          id="itemPrice"
+                          type="number"
+                          step="0.01"
+                          value={itemForm.price}
+                          onChange={(e) => setItemForm(prev => ({ ...prev, price: e.target.value }))}
+                          placeholder="12.99"
+                          required
+                        />
+                      </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="itemCategory">Category *</Label>
@@ -583,7 +583,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                     />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label htmlFor={`edit-price-${item.id}`}>Price *</Label>
+                                    <Label htmlFor={`edit-price-${item.id}`}>Price (USD) *</Label>
                                     <Input
                                       id={`edit-price-${item.id}`}
                                       type="number"
@@ -692,8 +692,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <div className="text-lg font-semibold">
-                                    ${item.price.toFixed(2)}
+                                  <div className="text-right">
+                                    <div className="text-lg font-semibold">${(item.price ?? 0).toFixed(2)} USD</div>
                                   </div>
                                   <div className="flex gap-1">
                                     <Button

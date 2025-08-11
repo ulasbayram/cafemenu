@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { QrCode, Coffee, Smartphone, Users } from "lucide-react";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
 ///import "./index.css";
 
 const Index = () => {
@@ -14,9 +15,12 @@ const Index = () => {
             <QrCode className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold">QR Menu</span>
           </div>
-          <Link href="/auth">
-            <Button>Get Started</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link href="/auth">
+              <Button>Get Started</Button>
+            </Link>
+          </div>
         </div>
       </header>
 

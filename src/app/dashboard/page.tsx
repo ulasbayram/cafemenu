@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +11,8 @@ import { User } from "@supabase/supabase-js";
 import { QrCode, Plus, Coffee, Menu } from "lucide-react";
 import CafeForm from "@/components/CafeForm";
 import MenuManager from "@/components/MenuManager";
+import { QRCode } from "@/components/QRCode";
+import { DashboardDisplayName } from "./DisplayName";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -26,11 +29,12 @@ const Dashboard = () => {
         router.push("/auth");
       } else {
         setUser(session.user);
+        // Refresh cafes list when auth state changes to signed in
+        fetchCafes(session.user.id);
       }
     });
 
     checkUser();
-    fetchCafes();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -39,17 +43,20 @@ const Dashboard = () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       router.push("/auth");
-    } else {
-      setUser(session.user);
+      setLoading(false);
+      return;
     }
+    setUser(session.user);
+    await fetchCafes(session.user.id);
     setLoading(false);
   };
 
-  const fetchCafes = async () => {
+  const fetchCafes = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from("cafes")
         .select("*")
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -70,7 +77,9 @@ const Dashboard = () => {
 
   const handleCafeCreated = () => {
     setShowCafeForm(false);
-    fetchCafes();
+    if (user?.id) {
+      fetchCafes(user.id);
+    }
   };
 
   const handleManageMenu = (cafe: any) => {
@@ -105,7 +114,9 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">QR Menu Dashboard</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{user?.email}</span>
+            <ThemeToggle />
+            <DashboardDisplayName emailFallback={user?.email ?? ''} />
+            <a className="text-sm underline text-muted-foreground" href="/dashboard/settings">Settings</a>
             <Button variant="outline" onClick={handleSignOut}>
               Sign Out
             </Button>
@@ -189,17 +200,28 @@ const Dashboard = () => {
                   <CardDescription>{cafe.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">
-                      {cafe.location}
-                    </span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleManageMenu(cafe)}
-                    >
-                      Manage Menu
-                    </Button>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="mb-3">
+                        <QRCode 
+                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/${encodeURIComponent(cafe.name)}`}
+                          size={96}
+                          className="rounded bg-white p-1 border"
+                        />
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <span className="align-middle">{cafe.location}</span>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleManageMenu(cafe)}
+                      >
+                        Manage Menu
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
