@@ -5,6 +5,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CurrencySelector, Price } from "./currency";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { LangText } from "@/components/LangText";
+import CategoryNav from "./CategoryNav";
 
 interface Cafe {
   id: string;
@@ -110,10 +113,13 @@ export default async function CafeMenuPage({
             </div>
             <div className="flex items-center gap-2">
               <CurrencySelector />
+              <LanguageToggle />
               <ThemeToggle />
             </div>
           </div>
         </header>
+
+        <CategoryNav categories={preparedCategories.map(c => ({ id: c.id, name: c.name }))} />
 
         {preparedCategories.length === 0 ? (
           <Card>
@@ -124,7 +130,7 @@ export default async function CafeMenuPage({
         ) : (
           <div className="space-y-8">
             {preparedCategories.map((category) => (
-              <section key={category.id}>
+              <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-24">
                 <div className="flex items-baseline justify-between mb-4">
                   <h2 className="text-2xl font-bold">{category.name}</h2>
                   {category.description && (
@@ -172,7 +178,7 @@ export default async function CafeMenuPage({
                         </CardHeader>
                         {item.description && (
                           <CardContent className="pt-0">
-                            <p className="text-sm text-muted-foreground">{item.description}</p>
+                            <p className="text-sm text-muted-foreground"><LangText value={item.description} /></p>
                           </CardContent>
                         )}
                       </Card>

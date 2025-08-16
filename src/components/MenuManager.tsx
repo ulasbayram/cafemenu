@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, ArrowLeft, Save, X } from "lucide-react";
+import { LangText } from "./LangText";
+import { Switch } from "@/components/ui/switch";
 
 interface Cafe {
   id: string;
@@ -20,19 +22,19 @@ interface Cafe {
 interface Category {
   id: string;
   name: string;
-  description: string;
-  sort_order: number;
+  description: string | null;
+  sort_order: number | null;
 }
 
 interface MenuItem {
   id: string;
   name: string;
-  description: string;
-  price: number;
+  description: string | null;
+  price: number | null;
   category_id: string;
-  is_available: boolean;
-  sort_order: number;
-  image_url?: string;
+  is_available: boolean | null;
+  sort_order: number | null;
+  image_url: string | null;
 }
 
 interface MenuManagerProps {
@@ -57,7 +59,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
 
   const [itemForm, setItemForm] = useState({
     name: "",
-    description: "",
+    description_en: "",
+    description_tr: "",
     price: "",
     category_id: "",
     is_available: true,
@@ -66,7 +69,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
 
   const [editForm, setEditForm] = useState({
     name: "",
-    description: "",
+    description_en: "",
+    description_tr: "",
     price: "",
     category_id: "",
     is_available: true,
@@ -179,7 +183,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
         .insert([
           {
             name: itemForm.name,
-            description: itemForm.description,
+            description: JSON.stringify({ en: itemForm.description_en || null, tr: itemForm.description_tr || null }),
             price: itemForm.price === "" ? null : parseFloat(itemForm.price),
             category_id: itemForm.category_id,
             is_available: itemForm.is_available,
@@ -197,7 +201,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
 
       setItemForm({
         name: "",
-        description: "",
+        description_en: "",
+        description_tr: "",
         price: "",
         category_id: "",
         is_available: true,
@@ -220,22 +225,28 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
 
   const startEditingItem = (item: MenuItem) => {
     setEditingItem(item);
+    try {
+      let parsed: any = {}
+      try { parsed = item.description ? JSON.parse(item.description) : {} } catch {}
     setEditForm({
       name: item.name,
-      description: item.description || "",
+      description_en: parsed?.en ?? (typeof item.description === 'string' ? item.description : ""),
+      description_tr: parsed?.tr ?? "",
       price: (item.price ?? 0).toString(),
       category_id: item.category_id,
-      is_available: item.is_available,
+      is_available: !!item.is_available,
       image: null,
       currentImageUrl: item.image_url || "",
     });
+    } catch { /* ignore */ }
   };
 
   const cancelEditingItem = () => {
     setEditingItem(null);
     setEditForm({
       name: "",
-      description: "",
+      description_en: "",
+      description_tr: "",
       price: "",
       category_id: "",
       is_available: true,
@@ -281,7 +292,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
         .from("menu_items")
         .update({
           name: editForm.name,
-          description: editForm.description,
+          description: JSON.stringify({ en: editForm.description_en || null, tr: editForm.description_tr || null }),
           price: editForm.price === "" ? null : parseFloat(editForm.price),
           category_id: editForm.category_id,
           is_available: editForm.is_available,
@@ -476,7 +487,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
               <CardContent>
                 <form onSubmit={createMenuItem} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                      <div className="space-y-2">
                       <Label htmlFor="itemName">Item Name *</Label>
                       <Input
                         id="itemName"
@@ -486,6 +497,26 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                         required
                       />
                     </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="itemDescriptionEn">Description (English)</Label>
+                        <Textarea
+                          id="itemDescriptionEn"
+                          value={itemForm.description_en}
+                          onChange={(e) => setItemForm(prev => ({ ...prev, description_en: e.target.value }))}
+                          placeholder="Fresh romaine lettuce with parmesan cheese and croutons..."
+                          rows={3}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="itemDescriptionTr">Açıklama (Türkçe)</Label>
+                        <Textarea
+                          id="itemDescriptionTr"
+                          value={itemForm.description_tr}
+                          onChange={(e) => setItemForm(prev => ({ ...prev, description_tr: e.target.value }))}
+                          placeholder="Parmesan ve krutonlu taze marul..."
+                          rows={3}
+                        />
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="itemPrice">Price (USD) *</Label>
                         <Input
@@ -497,6 +528,10 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                           placeholder="12.99"
                           required
                         />
+                      </div>
+                      <div className="flex items-center gap-3 pt-6">
+                        <Switch id="itemAvailable" checked={itemForm.is_available} onCheckedChange={(v: boolean) => setItemForm(prev => ({ ...prev, is_available: v }))} />
+                        <Label htmlFor="itemAvailable">Available</Label>
                       </div>
                   </div>
                   <div className="space-y-2">
@@ -516,16 +551,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="itemDescription">Description</Label>
-                    <Textarea
-                      id="itemDescription"
-                      value={itemForm.description}
-                      onChange={(e) => setItemForm(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Fresh romaine lettuce with parmesan cheese and croutons..."
-                      rows={3}
-                    />
-                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="itemImage">Image</Label>
                     <Input
@@ -611,13 +637,20 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                   </select>
                                 </div>
                                 <div className="space-y-2">
-                                  <Label htmlFor={`edit-description-${item.id}`}>Description</Label>
-                                  <Textarea
-                                    id={`edit-description-${item.id}`}
-                                    value={editForm.description}
-                                    onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                                    rows={2}
-                                  />
+                                    <Label htmlFor={`edit-description-en-${item.id}`}>Description (English)</Label>
+                                    <Textarea
+                                      id={`edit-description-en-${item.id}`}
+                                      value={editForm.description_en}
+                                      onChange={(e) => setEditForm(prev => ({ ...prev, description_en: e.target.value }))}
+                                      rows={2}
+                                    />
+                                    <Label htmlFor={`edit-description-tr-${item.id}`}>Açıklama (Türkçe)</Label>
+                                    <Textarea
+                                      id={`edit-description-tr-${item.id}`}
+                                      value={editForm.description_tr}
+                                      onChange={(e) => setEditForm(prev => ({ ...prev, description_tr: e.target.value }))}
+                                      rows={2}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor={`edit-image-${item.id}`}>Change Image</Label>
@@ -645,12 +678,11 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                     Upload a new image to replace the current one (optional)
                                   </p>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="checkbox"
+                                <div className="flex items-center gap-3">
+                                  <Switch
                                     id={`edit-available-${item.id}`}
                                     checked={editForm.is_available}
-                                    onChange={(e) => setEditForm(prev => ({ ...prev, is_available: e.target.checked }))}
+                                    onCheckedChange={(v: boolean) => setEditForm(prev => ({ ...prev, is_available: v }))}
                                   />
                                   <Label htmlFor={`edit-available-${item.id}`}>Available</Label>
                                 </div>
@@ -687,7 +719,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                   </div>
                                   {item.description && (
                                     <p className="text-sm text-muted-foreground mb-2">
-                                      {item.description}
+                                      <LangText value={item.description} />
                                     </p>
                                   )}
                                 </div>

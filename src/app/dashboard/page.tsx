@@ -8,11 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from  'next/navigation';
 import { User } from "@supabase/supabase-js";
-import { QrCode, Plus, Coffee, Menu } from "lucide-react";
+import { QrCode, Plus, Coffee, Menu, Settings } from "lucide-react";
+import Link from "next/link";
 import CafeForm from "@/components/CafeForm";
 import MenuManager from "@/components/MenuManager";
 import { QRCode } from "@/components/QRCode";
 import { DashboardDisplayName } from "./DisplayName";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -114,9 +116,15 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold">QR Menu Dashboard</h1>
           <div className="flex items-center gap-4">
+            <LanguageToggle />
             <ThemeToggle />
             <DashboardDisplayName emailFallback={user?.email ?? ''} />
-            <a className="text-sm underline text-muted-foreground" href="/dashboard/settings">Settings</a>
+            <Link href="/dashboard/settings">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Settings className="h-4 w-4" />
+                Settings
+              </Button>
+            </Link>
             <Button variant="outline" onClick={handleSignOut}>
               Sign Out
             </Button>
@@ -153,20 +161,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Menu Items</CardTitle>
-              <Menu className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {cafes.reduce((total, cafe) => {
-                  // This would need a join query in real implementation
-                  return total + 0; // Placeholder for now
-                }, 0)}
-              </div>
-            </CardContent>
-          </Card>
+          
         </div>
 
         <div className="flex justify-between items-center mb-6">

@@ -36,9 +36,11 @@ export default function RootLayout({
             (function(){
               try{
                 var t = localStorage.getItem('theme');
+                var l = localStorage.getItem('lang');
                 var d = document.documentElement;
                 if(t === 'dark') { d.classList.add('dark'); d.style.colorScheme = 'dark'; }
                 else { d.classList.remove('dark'); d.style.colorScheme = 'light'; }
+                if(l === 'tr') { d.setAttribute('lang', 'tr'); } else { d.setAttribute('lang', 'en'); }
               }catch(e){}
             })();
           `}}
