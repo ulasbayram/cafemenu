@@ -4,24 +4,28 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from  'next/navigation';
 import { User } from "@supabase/supabase-js";
-import { QrCode, Plus, Coffee, Menu, Settings } from "lucide-react";
+import { QrCode, Plus, Coffee, Menu, Settings, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
 import CafeForm from "@/components/CafeForm";
 import MenuManager from "@/components/MenuManager";
 import { QRCode } from "@/components/QRCode";
 import { DashboardDisplayName } from "./DisplayName";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { Trans } from "@/components/Trans";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [cafes, setCafes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCafeForm, setShowCafeForm] = useState(false);
+  const [editingCafe, setEditingCafe] = useState<any>(null);
   const [selectedCafe, setSelectedCafe] = useState<any>(null);
+  const [cafeToDelete, setCafeToDelete] = useState<any>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -79,8 +83,48 @@ const Dashboard = () => {
 
   const handleCafeCreated = () => {
     setShowCafeForm(false);
+    setEditingCafe(null);
     if (user?.id) {
       fetchCafes(user.id);
+    }
+  };
+
+  const handleEditCafe = (cafe: any) => {
+    setEditingCafe(cafe);
+    setShowCafeForm(true);
+  };
+
+  const handleDeleteCafe = (cafe: any) => {
+    setCafeToDelete(cafe);
+  };
+
+  const confirmDeleteCafe = async () => {
+    if (!cafeToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("cafes")
+        .delete()
+        .eq("id", cafeToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success", // Keep English for technical messages
+        description: "Cafe deleted successfully!", // Can be translated if needed
+      });
+
+      if (user?.id) {
+        fetchCafes(user.id);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCafeToDelete(null);
     }
   };
 
@@ -114,7 +158,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">QR Menu Dashboard</h1>
+          <h1 className="text-2xl font-bold"><Trans k="dashboardTitle" /></h1>
           <div className="flex items-center gap-4">
             <LanguageToggle />
             <ThemeToggle />
@@ -122,11 +166,11 @@ const Dashboard = () => {
             <Link href="/dashboard/settings">
               <Button variant="outline" size="sm" className="gap-2">
                 <Settings className="h-4 w-4" />
-                Settings
+                <Trans k="settings" />
               </Button>
             </Link>
             <Button variant="outline" onClick={handleSignOut}>
-              Sign Out
+              <Trans k="signOut" />
             </Button>
           </div>
         </div>
@@ -134,16 +178,16 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Welcome to your cafe dashboard</h2>
+          <h2 className="text-3xl font-bold mb-2"><Trans k="welcomeToDashboard" /></h2>
           <p className="text-muted-foreground">
-            Create and manage your digital menus with QR codes for easy customer access.
+            <Trans k="dashboardSubtitle" />
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Cafes</CardTitle>
+              <CardTitle className="text-sm font-medium"><Trans k="totalCafes" /></CardTitle>
               <Coffee className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -153,7 +197,7 @@ const Dashboard = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">QR Codes Generated</CardTitle>
+              <CardTitle className="text-sm font-medium"><Trans k="qrCodesGenerated" /></CardTitle>
               <QrCode className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -165,10 +209,10 @@ const Dashboard = () => {
         </div>
 
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold">Your Cafes</h3>
+          <h3 className="text-xl font-semibold"><Trans k="yourCafes" /></h3>
           <Button onClick={() => setShowCafeForm(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add New Cafe
+            <Trans k="addNewCafe" />
           </Button>
         </div>
 
@@ -176,47 +220,69 @@ const Dashboard = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Coffee className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No cafes yet</h3>
+              <h3 className="text-lg font-semibold mb-2"><Trans k="noCafesYet" /></h3>
               <p className="text-muted-foreground text-center mb-4">
-                Get started by creating your first cafe and its digital menu.
+                <Trans k="getStartedText" />
               </p>
               <Button onClick={() => setShowCafeForm(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Your First Cafe
+                <Trans k="createFirstCafe" />
               </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {cafes.map((cafe) => (
-              <Card key={cafe.id}>
-                <CardHeader>
-                  <CardTitle>{cafe.name}</CardTitle>
-                  <CardDescription>{cafe.description}</CardDescription>
+              <Card key={cafe.id} className="flex flex-col">
+                <CardHeader className="pb-3">
+                  <CardTitle className="line-clamp-1">{cafe.name}</CardTitle>
+                  <CardDescription className="line-clamp-2 min-h-[2.5rem]">
+                    {cafe.description || <Trans k="noDescription" />}
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="mb-3">
-                        <QRCode 
-                          value={`${typeof window !== 'undefined' ? window.location.origin : ''}/${encodeURIComponent(cafe.name)}`}
-                          size={96}
-                          className="rounded bg-white p-1 border"
-                        />
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        <span className="align-middle">{cafe.location}</span>
-                      </div>
-                    </div>
+                <CardContent className="flex-1 flex flex-col">
+                  <div className="flex items-start gap-4 mb-4">
                     <div className="shrink-0">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleManageMenu(cafe)}
-                      >
-                        Manage Menu
-                      </Button>
+                      <QRCode 
+                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/${encodeURIComponent(cafe.name)}`}
+                        size={96}
+                        className="rounded bg-white p-1 border"
+                      />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1 mb-1">
+                          <span className="font-medium"><Trans k="location" /></span>
+                        </div>
+                        <span className="break-words">{cafe.location || <Trans k="notSpecified" />}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-auto">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleManageMenu(cafe)}
+                      className="flex-1"
+                    >
+                      <Menu className="h-4 w-4 mr-1" />
+                      <Trans k="manageMenu" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditCafe(cafe)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDeleteCafe(cafe)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -225,17 +291,44 @@ const Dashboard = () => {
         )}
       </main>
 
-      <Dialog open={showCafeForm} onOpenChange={setShowCafeForm}>
+      <Dialog open={showCafeForm} onOpenChange={(open) => {
+        setShowCafeForm(open);
+        if (!open) setEditingCafe(null);
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Create New Cafe</DialogTitle>
+            <DialogTitle>{editingCafe ? <Trans k="editCafe" /> : <Trans k="createNewCafe" />}</DialogTitle>
           </DialogHeader>
           <CafeForm 
+            cafe={editingCafe}
             onSuccess={handleCafeCreated}
-            onCancel={() => setShowCafeForm(false)}
+            onCancel={() => {
+              setShowCafeForm(false);
+              setEditingCafe(null);
+            }}
           />
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!cafeToDelete} onOpenChange={() => setCafeToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle><Trans k="deleteCafe" /></AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans k="deleteConfirmation" /> "{cafeToDelete?.name}"? <Trans k="deleteWarning" />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel><Trans k="cancel" /></AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteCafe}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trans k="deleteCafe" />
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

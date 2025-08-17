@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Trans } from '@/components/Trans'
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState('')
@@ -40,14 +41,14 @@ export default function SettingsPage() {
       <div className="container mx-auto px-4 py-8 max-w-2xl space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Dashboard Settings</CardTitle>
+            <CardTitle><Trans k="dashboardSettings" /></CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="displayName">Display name (top right in dashboard)</Label>
+              <Label htmlFor="displayName"><Trans k="displayName" /></Label>
               <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="e.g., My Cafe Admin" />
               <div>
-                <Button size="sm" onClick={save}>Save Name</Button>
+                <Button size="sm" onClick={save}><Trans k="saveName" /></Button>
               </div>
             </div>
           </CardContent>
@@ -55,13 +56,13 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Currency</CardTitle>
+            <CardTitle><Trans k="currency" /></CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Label htmlFor="rate">Exchange rate (TRY per 1 USD)</Label>
+            <Label htmlFor="rate"><Trans k="exchangeRate" /></Label>
             <Input id="rate" type="number" step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g., 35" />
             <div>
-              <Button size="sm" onClick={saveRate}>Save Rate</Button>
+              <Button size="sm" onClick={saveRate}><Trans k="saveRate" /></Button>
             </div>
           </CardContent>
         </Card>

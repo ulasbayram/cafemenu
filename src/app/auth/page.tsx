@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation'
 import { useEffect } from "react";
+import { Trans } from "@/components/Trans";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -48,7 +49,7 @@ const Auth = () => {
     } else {
       toast({
         title: "Success",
-        description: "Check your email for confirmation link",
+        description: "Check your email for confirmation link", // Can be translated if needed
       });
     }
     setLoading(false);
@@ -79,20 +80,20 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>QR Menu System</CardTitle>
-          <CardDescription>Sign in to manage your cafe menus</CardDescription>
+          <CardTitle><Trans k="qrMenuSystem" /></CardTitle>
+          <CardDescription><Trans k="signInToManage" /></CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="signin"><Trans k="signIn" /></TabsTrigger>
+              <TabsTrigger value="signup"><Trans k="signUp" /></TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email"><Trans k="emailAddress" /></Label>
                   <Input
                     id="email"
                     type="email"
@@ -102,7 +103,7 @@ const Auth = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password"><Trans k="password" /></Label>
                   <Input
                     id="password"
                     type="password"
@@ -112,7 +113,7 @@ const Auth = () => {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading ? <Trans k="signingIn" /> : <Trans k="signInButton" />}
                 </Button>
               </form>
             </TabsContent>
@@ -120,7 +121,7 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div>
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email"><Trans k="emailAddress" /></Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -130,7 +131,7 @@ const Auth = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password"><Trans k="password" /></Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -140,7 +141,7 @@ const Auth = () => {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing up..." : "Sign Up"}
+                  {loading ? <Trans k="signingUp" /> : <Trans k="signUpButton" />}
                 </Button>
               </form>
             </TabsContent>

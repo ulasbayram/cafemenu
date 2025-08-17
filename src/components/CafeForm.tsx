@@ -6,21 +6,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Trans } from "./Trans";
 
 interface CafeFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  cafe?: any; // For editing existing cafe
 }
 
-const CafeForm = ({ onSuccess, onCancel }: CafeFormProps) => {
+const CafeForm = ({ onSuccess, onCancel, cafe }: CafeFormProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    location: "",
-    website: "",
-    email: "",
-    phone: "",
+    name: cafe?.name || "",
+    description: cafe?.description || "",
+    location: cafe?.location || "",
+    website: cafe?.website || "",
+    email: cafe?.email || "",
+    phone: cafe?.phone || "",
   });
   const { toast } = useToast();
 
@@ -32,28 +34,44 @@ const CafeForm = ({ onSuccess, onCancel }: CafeFormProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({
-          title: "Error",
-          description: "You must be logged in to create a cafe",
+          title: "Error", // Keep English for technical messages
+          description: "You must be logged in to create a cafe", // Can be translated if needed
           variant: "destructive",
         });
         return;
       }
 
-      const { error } = await supabase
-        .from("cafes")
-        .insert([
-          {
-            ...formData,
-            user_id: user.id,
-          },
-        ]);
+      if (cafe) {
+        // Update existing cafe
+        const { error } = await supabase
+          .from("cafes")
+          .update(formData)
+          .eq("id", cafe.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Cafe created successfully!",
-      });
+        toast({
+          title: "Success", // Keep English for technical messages
+          description: "Cafe updated successfully!", // Can be translated if needed
+        });
+      } else {
+        // Create new cafe
+        const { error } = await supabase
+          .from("cafes")
+          .insert([
+            {
+              ...formData,
+              user_id: user.id,
+            },
+          ]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success", // Keep English for technical messages
+          description: "Cafe created successfully!", // Can be translated if needed
+        });
+      }
       onSuccess();
     } catch (error: any) {
       toast({
@@ -73,15 +91,15 @@ const CafeForm = ({ onSuccess, onCancel }: CafeFormProps) => {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Create New Cafe</CardTitle>
+        <CardTitle>{cafe ? <Trans k="editCafe" /> : <Trans k="createNewCafe" />}</CardTitle>
         <CardDescription>
-          Add your cafe information to get started with your digital menu.
+          {cafe ? <Trans k="editCafeDescription" /> : <Trans k="createCafeDescription" />}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Cafe Name *</Label>
+            <Label htmlFor="name"><Trans k="cafeName" /> *</Label>
             <Input
               id="name"
               value={formData.name}
@@ -92,7 +110,7 @@ const CafeForm = ({ onSuccess, onCancel }: CafeFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description"><Trans k="description" /></Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -103,7 +121,7 @@ const CafeForm = ({ onSuccess, onCancel }: CafeFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+            <Label htmlFor="location"><Trans k="location" /></Label>
             <Input
               id="location"
               value={formData.location}
@@ -113,7 +131,7 @@ const CafeForm = ({ onSuccess, onCancel }: CafeFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="website">Website</Label>
+            <Label htmlFor="website"><Trans k="website" /></Label>
             <Input
               id="website"
               type="url"
@@ -124,7 +142,7 @@ const CafeForm = ({ onSuccess, onCancel }: CafeFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email"><Trans k="email" /></Label>
             <Input
               id="email"
               type="email"
@@ -135,7 +153,7 @@ const CafeForm = ({ onSuccess, onCancel }: CafeFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone"><Trans k="phone" /></Label>
             <Input
               id="phone"
               type="tel"
@@ -147,10 +165,10 @@ const CafeForm = ({ onSuccess, onCancel }: CafeFormProps) => {
 
           <div className="flex gap-2 pt-4">
             <Button type="submit" disabled={loading || !formData.name} className="flex-1">
-              {loading ? "Creating..." : "Create Cafe"}
+              {loading ? (cafe ? <Trans k="updating" /> : <Trans k="creating" />) : (cafe ? <Trans k="updateCafe" /> : <Trans k="createCafe" />)}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
+              <Trans k="cancel" />
             </Button>
           </div>
         </form>

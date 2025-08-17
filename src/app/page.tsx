@@ -106,7 +106,7 @@ const Index = () => {
           <h2 className="text-3xl font-bold mb-6"><Trans k="readyToGoDigital" /></h2>
           <p className="text-xl text-muted-foreground mb-8"><Trans k="joinHundreds" /></p>
         <Link href="/auth">
-          <Button size="lg">Get Started Today</Button>
+          <Button size="lg"><Trans k="getStartedToday" /></Button>
         </Link>
       </section>
 

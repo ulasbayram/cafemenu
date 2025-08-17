@@ -11,6 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, ArrowLeft, Save, X } from "lucide-react";
 import { LangText } from "./LangText";
 import { Switch } from "@/components/ui/switch";
+import { MenuPreview } from "./MenuPreview";
+import { MenuDesign } from "./MenuDesign";
+import { Trans } from "./Trans";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { LanguageToggle } from "./LanguageToggle";
 
 interface Cafe {
   id: string;
@@ -50,15 +55,22 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
   const [showItemForm, setShowItemForm] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryUpdateLoading, setCategoryUpdateLoading] = useState(false);
+  const [menuDesign, setMenuDesign] = useState<any>(null);
   const { toast } = useToast();
 
   const [categoryForm, setCategoryForm] = useState({
-    name: "",
-    description: "",
+    name_en: "",
+    name_tr: "",
+    description_en: "",
+    description_tr: "",
   });
 
   const [itemForm, setItemForm] = useState({
-    name: "",
+    name_en: "",
+    name_tr: "",
     description_en: "",
     description_tr: "",
     price: "",
@@ -68,7 +80,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
   });
 
   const [editForm, setEditForm] = useState({
-    name: "",
+    name_en: "",
+    name_tr: "",
     description_en: "",
     description_tr: "",
     price: "",
@@ -129,7 +142,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
         .from("menu_categories")
         .insert([
           {
-            ...categoryForm,
+            name: JSON.stringify({ en: categoryForm.name_en || null, tr: categoryForm.name_tr || null }),
+            description: JSON.stringify({ en: categoryForm.description_en || null, tr: categoryForm.description_tr || null }),
             cafe_id: cafe.id,
             sort_order: categories.length,
           },
@@ -138,12 +152,13 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Category created successfully!",
+        title: "Success", // Keep English for technical messages
+        description: "Category created successfully!", // Can be translated if needed
       });
 
-      setCategoryForm({ name: "", description: "" });
+      setCategoryForm({ name_en: "", name_tr: "", description_en: "", description_tr: "" });
       setShowCategoryForm(false);
+      setEditingCategory(null);
       fetchCategories();
     } catch (error: any) {
       toast({
@@ -182,7 +197,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
         .from("menu_items")
         .insert([
           {
-            name: itemForm.name,
+            name: JSON.stringify({ en: itemForm.name_en || null, tr: itemForm.name_tr || null }),
             description: JSON.stringify({ en: itemForm.description_en || null, tr: itemForm.description_tr || null }),
             price: itemForm.price === "" ? null : parseFloat(itemForm.price),
             category_id: itemForm.category_id,
@@ -195,12 +210,13 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Menu item created successfully!",
+        title: "Success", // Keep English for technical messages
+        description: "Menu item created successfully!", // Can be translated if needed
       });
 
       setItemForm({
-        name: "",
+        name_en: "",
+        name_tr: "",
         description_en: "",
         description_tr: "",
         price: "",
@@ -226,12 +242,15 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
   const startEditingItem = (item: MenuItem) => {
     setEditingItem(item);
     try {
-      let parsed: any = {}
-      try { parsed = item.description ? JSON.parse(item.description) : {} } catch {}
+      let parsedDescription: any = {}
+      let parsedName: any = {}
+      try { parsedDescription = item.description ? JSON.parse(item.description) : {} } catch {}
+      try { parsedName = item.name ? JSON.parse(item.name) : {} } catch {}
     setEditForm({
-      name: item.name,
-      description_en: parsed?.en ?? (typeof item.description === 'string' ? item.description : ""),
-      description_tr: parsed?.tr ?? "",
+      name_en: parsedName?.en ?? (typeof item.name === 'string' ? item.name : ""),
+      name_tr: parsedName?.tr ?? "",
+      description_en: parsedDescription?.en ?? (typeof item.description === 'string' ? item.description : ""),
+      description_tr: parsedDescription?.tr ?? "",
       price: (item.price ?? 0).toString(),
       category_id: item.category_id,
       is_available: !!item.is_available,
@@ -244,7 +263,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
   const cancelEditingItem = () => {
     setEditingItem(null);
     setEditForm({
-      name: "",
+      name_en: "",
+      name_tr: "",
       description_en: "",
       description_tr: "",
       price: "",
@@ -291,7 +311,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
       const { error } = await supabase
         .from("menu_items")
         .update({
-          name: editForm.name,
+          name: JSON.stringify({ en: editForm.name_en || null, tr: editForm.name_tr || null }),
           description: JSON.stringify({ en: editForm.description_en || null, tr: editForm.description_tr || null }),
           price: editForm.price === "" ? null : parseFloat(editForm.price),
           category_id: editForm.category_id,
@@ -303,11 +323,110 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Menu item updated successfully!",
+        title: "Success", // Keep English for technical messages
+        description: "Menu item updated successfully!", // Can be translated if needed
       });
 
       cancelEditingItem();
+      fetchMenuItems();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDesignChange = (design: any) => {
+    setMenuDesign(design);
+  };
+
+  const startEditingCategory = (category: Category) => {
+    try {
+      let parsedName: any = {}
+      let parsedDescription: any = {}
+      try { parsedName = category.name ? JSON.parse(category.name) : {} } catch {}
+      try { parsedDescription = category.description ? JSON.parse(category.description) : {} } catch {}
+      
+      setCategoryForm({
+        name_en: parsedName?.en ?? (typeof category.name === 'string' ? category.name : ""),
+        name_tr: parsedName?.tr ?? "",
+        description_en: parsedDescription?.en ?? (typeof category.description === 'string' ? category.description : ""),
+        description_tr: parsedDescription?.tr ?? "",
+      });
+      setEditingCategory(category);
+      setShowCategoryForm(true);
+    } catch { /* ignore */ }
+  };
+
+  const cancelEditingCategory = () => {
+    setEditingCategory(null);
+    setShowCategoryForm(false);
+    setCategoryForm({ name_en: "", name_tr: "", description_en: "", description_tr: "" });
+  };
+
+  const updateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory) return;
+    
+    setCategoryUpdateLoading(true);
+    try {
+      const { error } = await supabase
+        .from("menu_categories")
+        .update({
+          name: JSON.stringify({ en: categoryForm.name_en || null, tr: categoryForm.name_tr || null }),
+          description: JSON.stringify({ en: categoryForm.description_en || null, tr: categoryForm.description_tr || null }),
+        })
+        .eq("id", editingCategory.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Category updated successfully!",
+      });
+
+      cancelEditingCategory();
+      fetchCategories();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCategoryUpdateLoading(false);
+    }
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      // First delete all menu items in this category
+      const { error: itemsError } = await supabase
+        .from("menu_items")
+        .delete()
+        .eq("category_id", categoryToDelete.id);
+
+      if (itemsError) throw itemsError;
+
+      // Then delete the category
+      const { error: categoryError } = await supabase
+        .from("menu_categories")
+        .delete()
+        .eq("id", categoryToDelete.id);
+
+      if (categoryError) throw categoryError;
+
+      toast({
+        title: "Success",
+        description: "Category deleted successfully!",
+      });
+
+      setCategoryToDelete(null);
+      fetchCategories();
       fetchMenuItems();
     } catch (error: any) {
       toast({
@@ -338,8 +457,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Menu item deleted successfully!",
+        title: "Success", // Keep English for technical messages
+        description: "Menu item deleted successfully!", // Can be translated if needed
       });
 
       fetchMenuItems();
@@ -355,70 +474,131 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div>Loading menu...</div>
+        <div><Trans k="loadingMenu" /></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">{cafe.name}</h1>
-          <p className="text-muted-foreground">Menu Management</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            <Trans k="backToDashboard" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{cafe.name}</h1>
+            <p className="text-muted-foreground"><Trans k="menuManagement" /></p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <LanguageToggle />
+          <MenuPreview 
+            cafe={cafe}
+            categories={categories}
+            menuItems={menuItems}
+            customDesign={menuDesign}
+          />
         </div>
       </div>
 
       <Tabs defaultValue="categories" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="items">Menu Items</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="categories"><Trans k="categories" /></TabsTrigger>
+            <TabsTrigger value="items"><Trans k="menuItems" /></TabsTrigger>
+            <TabsTrigger value="design"><Trans k="design" /></TabsTrigger>
+          </TabsList>
+          <div className="sm:hidden">
+            <MenuPreview 
+              cafe={cafe}
+              categories={categories}
+              menuItems={menuItems}
+              customDesign={menuDesign}
+            />
+          </div>
+        </div>
 
         <TabsContent value="categories" className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Menu Categories</h2>
-            <Button onClick={() => setShowCategoryForm(true)}>
+            <h2 className="text-xl font-semibold"><Trans k="menuCategories" /></h2>
+            <Button onClick={() => {
+              if (!showCategoryForm) {
+                setCategoryForm({ name_en: "", name_tr: "", description_en: "", description_tr: "" });
+                setEditingCategory(null);
+              }
+              setShowCategoryForm(true);
+            }}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Category
+              <Trans k="addCategory" />
             </Button>
           </div>
 
           {showCategoryForm && (
             <Card>
               <CardHeader>
-                <CardTitle>Create New Category</CardTitle>
+                <CardTitle>
+                  {editingCategory ? <Trans k="editCategory" /> : <Trans k="createNewCategory" />}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={createCategory} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="categoryName">Category Name *</Label>
-                    <Input
-                      id="categoryName"
-                      value={categoryForm.name}
-                      onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Appetizers, Main Courses, Desserts"
-                      required
-                    />
+                <form onSubmit={editingCategory ? updateCategory : createCategory} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryNameEn"><Trans k="categoryNameEnglish" /> *</Label>
+                      <Input
+                        id="categoryNameEn"
+                        value={categoryForm.name_en}
+                        onChange={(e) => setCategoryForm(prev => ({ ...prev, name_en: e.target.value }))}
+                        placeholder="e.g., Appetizers"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryNameTr"><Trans k="categoryNameTurkish" /></Label>
+                      <Input
+                        id="categoryNameTr"
+                        value={categoryForm.name_tr}
+                        onChange={(e) => setCategoryForm(prev => ({ ...prev, name_tr: e.target.value }))}
+                        placeholder="ör. Mezeler"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="categoryDescription">Description</Label>
-                    <Textarea
-                      id="categoryDescription"
-                      value={categoryForm.description}
-                      onChange={(e) => setCategoryForm(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Brief description of this category"
-                      rows={2}
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryDescEn"><Trans k="categoryDescriptionEnglish" /></Label>
+                      <Textarea
+                        id="categoryDescEn"
+                        value={categoryForm.description_en}
+                        onChange={(e) => setCategoryForm(prev => ({ ...prev, description_en: e.target.value }))}
+                        placeholder="Brief description in English"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="categoryDescTr"><Trans k="categoryDescriptionTurkish" /></Label>
+                      <Textarea
+                        id="categoryDescTr"
+                        value={categoryForm.description_tr}
+                        onChange={(e) => setCategoryForm(prev => ({ ...prev, description_tr: e.target.value }))}
+                        placeholder="Türkçe kısa açıklama"
+                        rows={3}
+                      />
+                    </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button type="submit">Create Category</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowCategoryForm(false)}>
-                      Cancel
+                    <Button type="submit" disabled={categoryUpdateLoading}>
+                      {categoryUpdateLoading ? (
+                        <Trans k="updating" />
+                      ) : editingCategory ? (
+                        <Trans k="updateCategory" />
+                      ) : (
+                        <Trans k="createCategory" />
+                      )}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={editingCategory ? cancelEditingCategory : () => setShowCategoryForm(false)}>
+                      <Trans k="cancel" />
                     </Button>
                   </div>
                 </form>
@@ -430,9 +610,9 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
             {categories.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <h3 className="text-lg font-semibold mb-2">No categories yet</h3>
+                  <h3 className="text-lg font-semibold mb-2"><Trans k="noCategoriesYet" /></h3>
                   <p className="text-muted-foreground text-center mb-4">
-                    Create your first menu category to organize your items.
+                    <Trans k="createFirstCategory" />
                   </p>
                 </CardContent>
               </Card>
@@ -441,13 +621,31 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                 <Card key={category.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>{category.name}</CardTitle>
-                        <CardDescription>{category.description}</CardDescription>
+                      <div className="flex-1">
+                        <CardTitle><LangText value={category.name} /></CardTitle>
+                        <CardDescription><LangText value={category.description} /></CardDescription>
                       </div>
-                      <Badge variant="secondary">
-                        {getCategoryItems(category.id).length} items
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">
+                          {getCategoryItems(category.id).length} <Trans k="items" />
+                        </Badge>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startEditingCategory(category)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCategoryToDelete(category)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </CardHeader>
                 </Card>
@@ -458,22 +656,22 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
 
         <TabsContent value="items" className="space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Menu Items</h2>
+            <h2 className="text-xl font-semibold"><Trans k="menuItems" /></h2>
             <Button 
               onClick={() => setShowItemForm(true)}
               disabled={categories.length === 0}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Item
+              <Trans k="addItem" />
             </Button>
           </div>
 
           {categories.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <h3 className="text-lg font-semibold mb-2">No categories available</h3>
+                <h3 className="text-lg font-semibold mb-2"><Trans k="noCategoriesAvailable" /></h3>
                 <p className="text-muted-foreground text-center mb-4">
-                  You need to create at least one category before adding menu items.
+                  <Trans k="needCategoryFirst" />
                 </p>
               </CardContent>
             </Card>
@@ -482,23 +680,32 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
           {showItemForm && categories.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Create New Menu Item</CardTitle>
+                <CardTitle><Trans k="createNewMenuItem" /></CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={createMenuItem} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                      <Label htmlFor="itemName">Item Name *</Label>
-                      <Input
-                        id="itemName"
-                        value={itemForm.name}
-                        onChange={(e) => setItemForm(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="e.g., Caesar Salad"
-                        required
-                      />
-                    </div>
+                        <Label htmlFor="itemNameEn"><Trans k="itemNameEnglish" /> *</Label>
+                        <Input
+                          id="itemNameEn"
+                          value={itemForm.name_en}
+                          onChange={(e) => setItemForm(prev => ({ ...prev, name_en: e.target.value }))}
+                          placeholder="e.g., Caesar Salad"
+                          required
+                        />
+                      </div>
                       <div className="space-y-2">
-                        <Label htmlFor="itemDescriptionEn">Description (English)</Label>
+                        <Label htmlFor="itemNameTr"><Trans k="itemNameTurkish" /></Label>
+                        <Input
+                          id="itemNameTr"
+                          value={itemForm.name_tr}
+                          onChange={(e) => setItemForm(prev => ({ ...prev, name_tr: e.target.value }))}
+                          placeholder="ör. Sezar Salata"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="itemDescriptionEn"><Trans k="descriptionEnglish" /></Label>
                         <Textarea
                           id="itemDescriptionEn"
                           value={itemForm.description_en}
@@ -508,7 +715,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="itemDescriptionTr">Açıklama (Türkçe)</Label>
+                        <Label htmlFor="itemDescriptionTr"><Trans k="descriptionTurkish" /></Label>
                         <Textarea
                           id="itemDescriptionTr"
                           value={itemForm.description_tr}
@@ -518,7 +725,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="itemPrice">Price (USD) *</Label>
+                        <Label htmlFor="itemPrice"><Trans k="priceUSD" /> *</Label>
                         <Input
                           id="itemPrice"
                           type="number"
@@ -531,11 +738,11 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                       </div>
                       <div className="flex items-center gap-3 pt-6">
                         <Switch id="itemAvailable" checked={itemForm.is_available} onCheckedChange={(v: boolean) => setItemForm(prev => ({ ...prev, is_available: v }))} />
-                        <Label htmlFor="itemAvailable">Available</Label>
+                        <Label htmlFor="itemAvailable"><Trans k="available" /></Label>
                       </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="itemCategory">Category *</Label>
+                    <Label htmlFor="itemCategory"><Trans k="category" /> *</Label>
                     <select
                       id="itemCategory"
                       value={itemForm.category_id}
@@ -543,17 +750,27 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                       className="w-full p-2 border border-input rounded-md bg-background"
                       required
                     >
-                      <option value="">Select a category</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
+                      <option value=""><Trans k="selectCategory" /></option>
+                      {categories.map((category) => {
+                        // Parse category name for display in option
+                        let displayName = category.name;
+                        try {
+                          const parsed = JSON.parse(category.name);
+                          displayName = parsed.en || parsed.tr || category.name;
+                        } catch {
+                          // fallback to string value
+                        }
+                        return (
+                          <option key={category.id} value={category.id}>
+                            {displayName}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="itemImage">Image</Label>
+                    <Label htmlFor="itemImage"><Trans k="image" /></Label>
                     <Input
                       id="itemImage"
                       type="file"
@@ -565,13 +782,13 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                       className="cursor-pointer"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Upload an image of your menu item (optional)
+                      <Trans k="uploadImageOptional" />
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button type="submit">Create Item</Button>
+                    <Button type="submit"><Trans k="createItem" /></Button>
                     <Button type="button" variant="outline" onClick={() => setShowItemForm(false)}>
-                      Cancel
+                      <Trans k="cancel" />
                     </Button>
                   </div>
                 </form>
@@ -584,11 +801,11 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
               const categoryItems = getCategoryItems(category.id);
               return (
                 <div key={category.id}>
-                  <h3 className="text-lg font-semibold mb-3">{category.name}</h3>
+                  <h3 className="text-lg font-semibold mb-3"><LangText value={category.name} /></h3>
                   {categoryItems.length === 0 ? (
                     <Card>
                       <CardContent className="flex flex-col items-center justify-center py-8">
-                        <p className="text-muted-foreground">No items in this category yet.</p>
+                        <p className="text-muted-foreground"><Trans k="noItemsInCategory" /></p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -600,16 +817,24 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                               <form onSubmit={updateMenuItem} className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div className="space-y-2">
-                                    <Label htmlFor={`edit-name-${item.id}`}>Item Name *</Label>
+                                    <Label htmlFor={`edit-name-en-${item.id}`}><Trans k="itemNameEnglish" /> *</Label>
                                     <Input
-                                      id={`edit-name-${item.id}`}
-                                      value={editForm.name}
-                                      onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                                      id={`edit-name-en-${item.id}`}
+                                      value={editForm.name_en}
+                                      onChange={(e) => setEditForm(prev => ({ ...prev, name_en: e.target.value }))}
                                       required
                                     />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label htmlFor={`edit-price-${item.id}`}>Price (USD) *</Label>
+                                    <Label htmlFor={`edit-name-tr-${item.id}`}><Trans k="itemNameTurkish" /></Label>
+                                    <Input
+                                      id={`edit-name-tr-${item.id}`}
+                                      value={editForm.name_tr}
+                                      onChange={(e) => setEditForm(prev => ({ ...prev, name_tr: e.target.value }))}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`edit-price-${item.id}`}><Trans k="priceUSD" /> *</Label>
                                     <Input
                                       id={`edit-price-${item.id}`}
                                       type="number"
@@ -621,7 +846,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                   </div>
                                 </div>
                                 <div className="space-y-2">
-                                  <Label htmlFor={`edit-category-${item.id}`}>Category *</Label>
+                                  <Label htmlFor={`edit-category-${item.id}`}><Trans k="category" /> *</Label>
                                   <select
                                     id={`edit-category-${item.id}`}
                                     value={editForm.category_id}
@@ -629,22 +854,32 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                     className="w-full p-2 border border-input rounded-md bg-background"
                                     required
                                   >
-                                    {categories.map((category) => (
-                                      <option key={category.id} value={category.id}>
-                                        {category.name}
-                                      </option>
-                                    ))}
+                                    {categories.map((category) => {
+                                      // Parse category name for display in option
+                                      let displayName = category.name;
+                                      try {
+                                        const parsed = JSON.parse(category.name);
+                                        displayName = parsed.en || parsed.tr || category.name;
+                                      } catch {
+                                        // fallback to string value
+                                      }
+                                      return (
+                                        <option key={category.id} value={category.id}>
+                                          {displayName}
+                                        </option>
+                                      );
+                                    })}
                                   </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor={`edit-description-en-${item.id}`}>Description (English)</Label>
+                                    <Label htmlFor={`edit-description-en-${item.id}`}><Trans k="descriptionEnglish" /></Label>
                                     <Textarea
                                       id={`edit-description-en-${item.id}`}
                                       value={editForm.description_en}
                                       onChange={(e) => setEditForm(prev => ({ ...prev, description_en: e.target.value }))}
                                       rows={2}
                                     />
-                                    <Label htmlFor={`edit-description-tr-${item.id}`}>Açıklama (Türkçe)</Label>
+                                    <Label htmlFor={`edit-description-tr-${item.id}`}><Trans k="descriptionTurkish" /></Label>
                                     <Textarea
                                       id={`edit-description-tr-${item.id}`}
                                       value={editForm.description_tr}
@@ -653,7 +888,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                  <Label htmlFor={`edit-image-${item.id}`}>Change Image</Label>
+                                  <Label htmlFor={`edit-image-${item.id}`}><Trans k="changeImage" /></Label>
                                   {editForm.currentImageUrl && (
                                     <div className="mb-2">
                                       <img
@@ -661,7 +896,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                         alt="Current image"
                                         className="w-20 h-20 object-cover rounded-md"
                                       />
-                                      <p className="text-xs text-muted-foreground mt-1">Current image</p>
+                                      <p className="text-xs text-muted-foreground mt-1"><Trans k="currentImage" /></p>
                                     </div>
                                   )}
                                   <Input
@@ -675,7 +910,7 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                     className="cursor-pointer"
                                   />
                                   <p className="text-xs text-muted-foreground">
-                                    Upload a new image to replace the current one (optional)
+                                    <Trans k="uploadNewImage" />
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -684,16 +919,16 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                     checked={editForm.is_available}
                                     onCheckedChange={(v: boolean) => setEditForm(prev => ({ ...prev, is_available: v }))}
                                   />
-                                  <Label htmlFor={`edit-available-${item.id}`}>Available</Label>
+                                  <Label htmlFor={`edit-available-${item.id}`}><Trans k="available" /></Label>
                                 </div>
                                 <div className="flex gap-2">
                                   <Button type="submit" size="sm">
                                     <Save className="h-4 w-4 mr-2" />
-                                    Save
+                                    <Trans k="save" />
                                   </Button>
                                   <Button type="button" variant="outline" size="sm" onClick={cancelEditingItem}>
                                     <X className="h-4 w-4 mr-2" />
-                                    Cancel
+                                    <Trans k="cancel" />
                                   </Button>
                                 </div>
                               </form>
@@ -712,9 +947,9 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                               <div className="flex-1 flex justify-between items-start">
                                 <div>
                                   <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="font-medium">{item.name}</h4>
+                                    <h4 className="font-medium"><LangText value={item.name} /></h4>
                                     {!item.is_available && (
-                                      <Badge variant="destructive">Unavailable</Badge>
+                                      <Badge variant="destructive"><Trans k="unavailable" /></Badge>
                                     )}
                                   </div>
                                   {item.description && (
@@ -756,7 +991,41 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
             })}
           </div>
         </TabsContent>
+
+        <TabsContent value="design" className="space-y-4">
+          <MenuDesign 
+            cafeId={cafe.id}
+            onDesignChange={handleDesignChange}
+          />
+        </TabsContent>
       </Tabs>
+
+      {/* Category Delete Confirmation Dialog */}
+      <AlertDialog open={!!categoryToDelete} onOpenChange={() => setCategoryToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle><Trans k="deleteCategory" /></AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans k="deleteCategoryConfirmation" />
+              <br />
+              <span className="font-medium">
+                <LangText value={categoryToDelete?.name || ""} />
+              </span>
+              <br />
+              <br />
+              <Trans k="deleteCategoryWarning" />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Trans k="cancel" />
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCategory}>
+              <Trans k="deleteCategory" />
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
