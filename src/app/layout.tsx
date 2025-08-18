@@ -20,16 +20,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+
+
+import AppLayoutClient from "./AppLayoutClient";
+
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -45,7 +44,7 @@ export default function RootLayout({
             })();
           `}}
         />
-        {children}
+        <AppLayoutClient>{children}</AppLayoutClient>
       </body>
     </html>
   );

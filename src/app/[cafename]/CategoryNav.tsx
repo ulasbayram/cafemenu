@@ -15,9 +15,11 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const sectionIds = useMemo(() => categories.map((c) => `cat-${c.id}`), [categories]);
-
+  //const sectionIds = useMemo(() => categories.map((c) => `cat-${c.id}`), [categories]);
+  let sectionIds;
   useEffect(() => {
+    sectionIds = categories.map((c) => `cat-${c.id}`);
+
     if (sectionIds.length === 0) return;
 
     const observer = new IntersectionObserver(

@@ -1,6 +1,6 @@
 @import "tailwindcss/preflight";
-@tailwind base;
-@tailwind components;/**/
+/*@tailwind base;
+@tailwind components;*/
 @tailwind utilities;
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
