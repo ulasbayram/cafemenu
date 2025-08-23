@@ -112,8 +112,10 @@ export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps
       medium: 'text-2xl', 
       large: 'text-3xl'
     };
-    
-    return sizeMap[menuDesign.typography.headingSize] || 'text-2xl';
+      type HeadingSize = keyof typeof sizeMap;
+      const headingSize = menuDesign.typography.headingSize as HeadingSize;
+
+      return sizeMap[headingSize] || 'text-2xl';
   };
 
   const getBodySize = () => {
@@ -124,8 +126,10 @@ export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps
       medium: 'text-sm',
       large: 'text-base'
     };
-    
-    return sizeMap[menuDesign.typography.bodySize] || 'text-sm';
+      type BodySize = keyof typeof sizeMap;
+      const bodySize = menuDesign.typography.bodySize as BodySize;
+
+      return sizeMap[bodySize] || 'text-sm';
   };
 
   const getSpacingClass = () => {
@@ -136,8 +140,10 @@ export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps
       comfortable: 'space-y-8',
       relaxed: 'space-y-12'
     };
-    
-    return spacingMap[menuDesign.layout.spacing] || 'space-y-8';
+      type SpacingKey = keyof typeof spacingMap;
+      const spacing = menuDesign.layout.spacing as SpacingKey;
+
+      return spacingMap[spacing] || 'space-y-8';
   };
 
   return (

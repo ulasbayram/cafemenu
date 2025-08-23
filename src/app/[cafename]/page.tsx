@@ -28,10 +28,12 @@ interface CategoryWithItems {
   menu_items: MenuItem[];
 }
 
+type paramsType = Promise<{ cafename: string }>;
 
-
-export default async function CafeMenuPage({ params }: { params: { cafename: string } }) {
-  const cafename = decodeURIComponent(params.cafename);
+//export default async function CafeMenuPage({ params }: { params: { cafename: string } }) {
+export default async function CafeMenuPage({ params }: { params: paramsType }) {
+  const awaitedParams = await params;
+  const cafename = decodeURIComponent(awaitedParams.cafename);
 
   async function fetchData() {
     const supabase = await createClient();

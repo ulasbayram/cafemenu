@@ -315,7 +315,7 @@ const Dashboard = () => {
           <AlertDialogHeader>
             <AlertDialogTitle><Trans k="deleteCafe" /></AlertDialogTitle>
             <AlertDialogDescription>
-              <Trans k="deleteConfirmation" /> "{cafeToDelete?.name}"? <Trans k="deleteWarning" />
+              <Trans k="deleteConfirmation" /> &quot;{cafeToDelete?.name}&quot;? <Trans k="deleteWarning" />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

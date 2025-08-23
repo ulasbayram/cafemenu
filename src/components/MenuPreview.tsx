@@ -196,8 +196,10 @@ export function MenuPreview({ cafe, categories, menuItems, customDesign }: MenuP
       medium: 'text-2xl', 
       large: 'text-3xl'
     };
-    
-    return sizeMap[customDesign.typography.headingSize] || 'text-2xl';
+      type HeadingSize = keyof typeof sizeMap;
+      const headingSize = customDesign.typography.headingSize as HeadingSize;
+
+      return sizeMap[headingSize] || 'text-2xl';
   };
 
   const getBodySize = () => {
@@ -207,9 +209,11 @@ export function MenuPreview({ cafe, categories, menuItems, customDesign }: MenuP
       small: 'text-xs',
       medium: 'text-sm',
       large: 'text-base'
-    };
-    
-    return sizeMap[customDesign.typography.bodySize] || 'text-sm';
+    };  
+      type BodySize = keyof typeof sizeMap;
+      const bodySize = customDesign.typography.bodySize as BodySize;
+
+      return sizeMap[bodySize] || 'text-sm';
   };
 
   const getSpacingClass = () => {
@@ -220,8 +224,10 @@ export function MenuPreview({ cafe, categories, menuItems, customDesign }: MenuP
       comfortable: 'space-y-8',
       relaxed: 'space-y-12'
     };
-    
-    return spacingMap[customDesign.layout.spacing] || 'space-y-8';
+      type SpacingKey = keyof typeof spacingMap;
+      const spacing = customDesign.layout.spacing as SpacingKey;
+
+      return spacingMap[spacing] || 'space-y-8';
   };
 
   const PreviewContent = () => (

@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Palette, Save, RotateCcw, Brush, Type, Layout } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trans } from "./Trans";
+import { Json } from "@/integrations/supabase/types";
 
 interface MenuDesignProps {
   cafeId: string;
@@ -271,7 +272,7 @@ export function MenuDesign({ cafeId, onDesignChange }: MenuDesignProps) {
         .from('cafes')
         .select('menu_design')
         .eq('id', cafeId)
-        .single();
+        .single<{ menu_design: MenuDesign }>();
 
       if (error) throw error;
 
@@ -306,7 +307,7 @@ export function MenuDesign({ cafeId, onDesignChange }: MenuDesignProps) {
     try {
       const { error } = await supabase
         .from('cafes')
-        .update({ menu_design: design })
+        .update({ menu_design: design as unknown as Json })
         .eq('id', cafeId);
 
       if (error) throw error;
@@ -337,7 +338,7 @@ export function MenuDesign({ cafeId, onDesignChange }: MenuDesignProps) {
       // Set the menu_design to dashboard default design
       const { error } = await supabase
         .from('cafes')
-        .update({ menu_design: dashboardDefaultDesign })
+        .update({ menu_design: dashboardDefaultDesign as unknown as Json })
         .eq('id', cafeId);
 
       if (error) throw error;
