@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { Toaster } from "@/components/ui/toaster";
 
 export type Lang = "en" | "tr";
 export const LanguageContext = createContext<Lang>("en");
@@ -47,6 +48,7 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
       <footer className="border-t bg-background text-muted-foreground py-4 text-center">
         &copy; {new Date().getFullYear()} QR Kafem
       </footer>
+      <Toaster />
     </LanguageContext.Provider>
   );
 }
