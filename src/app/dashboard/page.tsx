@@ -9,10 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from  'next/navigation';
 import { User } from "@supabase/supabase-js";
-import { QrCode, Plus, Coffee, Menu, Settings, Edit, Trash2 } from "lucide-react";
+import { QrCode, Plus, Coffee, Menu, Settings, Edit, Trash2, Bot } from "lucide-react";
 import Link from "next/link";
 import CafeForm from "@/components/CafeForm";
 import MenuManager from "@/components/MenuManager";
+import MenuMigrationModal from "@/components/MenuMigrationModal";
 import { QRCode } from "@/components/QRCode";
 import { DashboardDisplayName } from "./DisplayName";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -26,6 +27,8 @@ const Dashboard = () => {
   const [editingCafe, setEditingCafe] = useState<any>(null);
   const [selectedCafe, setSelectedCafe] = useState<any>(null);
   const [cafeToDelete, setCafeToDelete] = useState<any>(null);
+  const [showMigrationModal, setShowMigrationModal] = useState(false);
+  const [migrationCafe, setMigrationCafe] = useState<any>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -134,6 +137,22 @@ const Dashboard = () => {
 
   const handleBackFromMenu = () => {
     setSelectedCafe(null);
+  };
+
+  const handleMigrateMenu = (cafe: any) => {
+    setMigrationCafe(cafe);
+    setShowMigrationModal(true);
+  };
+
+  const handleMigrationComplete = () => {
+    // Refresh cafes data to show updated menu
+    if (user?.id) {
+      fetchCafes(user.id);
+    }
+    toast({
+      title: "Migration Complete",
+      description: "Your physical menu has been successfully converted to digital format!",
+    });
   };
 
   if (loading) {
@@ -274,6 +293,15 @@ const Dashboard = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
+                      onClick={() => handleMigrateMenu(cafe)}
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-none hover:from-blue-600 hover:to-purple-700"
+                      title="Migrate Physical Menu with AI"
+                    >
+                      <Bot className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
                       onClick={() => handleEditCafe(cafe)}
                     >
                       <Edit className="h-4 w-4" />
@@ -332,6 +360,19 @@ const Dashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Menu Migration Modal */}
+      {migrationCafe && (
+        <MenuMigrationModal
+          isOpen={showMigrationModal}
+          onClose={() => {
+            setShowMigrationModal(false);
+            setMigrationCafe(null);
+          }}
+          cafe={migrationCafe}
+          onMigrationComplete={handleMigrationComplete}
+        />
+      )}
     </div>
   );
 };
