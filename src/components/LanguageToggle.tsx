@@ -25,11 +25,30 @@ export function LanguageToggle() {
     window.dispatchEvent(ev)
   }
 
+  const toggle = () => {
+    const next = lang === 'en' ? 'tr' : 'en'
+    set(next)
+  }
+
   return (
-    <div className="inline-flex items-center gap-1">
-      <Button size="icon" variant={lang === 'en' ? 'default' : 'outline'} aria-label="English" onClick={() => set('en')}>EN</Button>
-      <Button size="icon" variant={lang === 'tr' ? 'default' : 'outline'} aria-label="Türkçe" onClick={() => set('tr')}>TR</Button>
-    </div>
+    <>
+      {/* Mobile: Single toggle button */}
+      <Button 
+        size="icon" 
+        variant="outline" 
+        aria-label={`Current language: ${lang.toUpperCase()}. Click to switch`}
+        onClick={toggle}
+        className="sm:hidden h-9 w-9"
+      >
+        {lang.toUpperCase()}
+      </Button>
+      
+      {/* Desktop: Two separate buttons */}
+      <div className="hidden sm:inline-flex items-center gap-1">
+        <Button size="icon" variant={lang === 'en' ? 'default' : 'outline'} aria-label="English" onClick={() => set('en')}>EN</Button>
+        <Button size="icon" variant={lang === 'tr' ? 'default' : 'outline'} aria-label="Türkçe" onClick={() => set('tr')}>TR</Button>
+      </div>
+    </>
   )
 }
 

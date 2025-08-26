@@ -30,11 +30,30 @@ export function CurrencySelector() {
     window.dispatchEvent(ev);
   };
 
+  const toggle = () => {
+    const next = currency === 'USD' ? 'TRY' : 'USD';
+    set(next);
+  };
+
   return (
-    <div className="inline-flex items-center gap-1">
-      <Button size="sm" variant={currency === 'USD' ? 'default' : 'outline'} onClick={() => set('USD')}>USD</Button>
-      <Button size="sm" variant={currency === 'TRY' ? 'default' : 'outline'} onClick={() => set('TRY')}>TRY</Button>
-    </div>
+    <>
+      {/* Mobile: Single toggle button */}
+      <Button 
+        size="icon" 
+        variant="outline" 
+        aria-label={`Current currency: ${currency}. Click to switch`}
+        onClick={toggle}
+        className="sm:hidden h-9 w-9 text-xs"
+      >
+        {currency}
+      </Button>
+      
+      {/* Desktop: Two separate buttons */}
+      <div className="hidden sm:inline-flex items-center gap-1">
+        <Button size="sm" variant={currency === 'USD' ? 'default' : 'outline'} onClick={() => set('USD')}>USD</Button>
+        <Button size="sm" variant={currency === 'TRY' ? 'default' : 'outline'} onClick={() => set('TRY')}>TRY</Button>
+      </div>
+    </>
   );
 }
 

@@ -15,11 +15,9 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  //const sectionIds = useMemo(() => categories.map((c) => `cat-${c.id}`), [categories]);
-  let sectionIds;
+  const sectionIds = useMemo(() => categories.map((c) => `cat-${c.id}`), [categories]);
+  
   useEffect(() => {
-    sectionIds = categories.map((c) => `cat-${c.id}`);
-
     if (sectionIds.length === 0) return;
 
     const observer = new IntersectionObserver(
@@ -83,12 +81,14 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
   if (!categories || categories.length === 0) return null;
 
   return (
-    <div className="sticky top-0 z-30 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div
-        ref={containerRef}
-        className="container mx-auto max-w-5xl px-4 py-3 overflow-x-auto scrollbar-none"
-      >
-        <div className="flex gap-2 min-w-max">
+    <div className="sticky top-0 z-30 mb-4 px-4">
+      <div className="w-full">
+        <div className="rounded-lg border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+          <div
+            ref={containerRef}
+            className="px-4 sm:px-6 py-3 sm:py-4 overflow-x-auto scrollbar-none"
+          >
+            <div className="flex gap-2 sm:gap-3 min-w-max">
           {categories.map((c) => {
             const isActive = activeCategoryId === c.id;
             return (
@@ -98,16 +98,18 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
                 type="button"
                 onClick={() => handleClick(c.id)}
                 className={
-                  "whitespace-nowrap rounded-full border px-3 py-1.5 text-sm transition-colors " +
+                  "whitespace-nowrap rounded-full border px-4 py-2 sm:px-3 sm:py-1.5 text-sm sm:text-sm min-h-[44px] sm:min-h-auto transition-colors touch-manipulation " +
                   (isActive
                     ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-muted/40 text-foreground hover:bg-muted border-transparent")
+                    : "bg-muted/40 text-foreground hover:bg-muted border-transparent active:bg-muted")
                 }
               >
                 {c.name}
               </button>
             );
           })}
+            </div>
+          </div>
         </div>
       </div>
     </div>

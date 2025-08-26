@@ -44,8 +44,17 @@ export function ThemeToggle() {
   }, [theme])
 
   return (
-    <Button variant="outline" size="icon" aria-label="Toggle theme" onClick={toggle}>
-      {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    <Button 
+      variant="outline" 
+      size="icon" 
+      aria-label="Toggle theme" 
+      onClick={toggle}
+      className="h-9 w-9 sm:h-10 sm:w-10"
+    >
+      {theme === 'dark' ? 
+        <Sun className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> : 
+        <Moon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+      }
     </Button>
   )
 }

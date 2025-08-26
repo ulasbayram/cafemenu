@@ -157,20 +157,23 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold"><Trans k="dashboardTitle" /></h1>
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex justify-between items-center">
+          <h1 className="text-xl sm:text-2xl font-bold truncate pr-2"><Trans k="dashboardTitle" /></h1>
+          <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-4">
             <LanguageToggle />
             <ThemeToggle />
-            <DashboardDisplayName emailFallback={user?.email ?? ''} />
-            <Link href="/dashboard/settings">
-              <Button variant="outline" size="sm" className="gap-2">
+            <div className="hidden md:block">
+              <DashboardDisplayName emailFallback={user?.email ?? ''} />
+            </div>
+            <Link href="/dashboard/settings" className="hidden sm:block">
+              <Button variant="outline" size="sm" className="gap-1 lg:gap-2">
                 <Settings className="h-4 w-4" />
-                <Trans k="settings" />
+                <span className="hidden lg:inline"><Trans k="settings" /></span>
               </Button>
             </Link>
-            <Button variant="outline" onClick={handleSignOut}>
-              <Trans k="signOut" />
+            <Button variant="outline" size="sm" onClick={handleSignOut} className="text-sm">
+              <span className="hidden sm:inline"><Trans k="signOut" /></span>
+              <span className="sm:hidden">Exit</span>
             </Button>
           </div>
         </div>

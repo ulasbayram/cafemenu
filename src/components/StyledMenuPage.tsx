@@ -179,27 +179,30 @@ export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <CurrencySelector />
               <LanguageToggle />
               <ThemeToggle />
             </div>
           </div>
         </header>
+      </div>
 
-        <CategoryNav categories={categories.map(c => {
-          // Parse category name for navigation
-          let displayName = c.name;
-          try {
-            const parsed = JSON.parse(c.name);
-            // Get current language preference or fallback to English
-            const currentLang = localStorage.getItem('app_language') || 'en';
-            displayName = parsed[currentLang] || parsed.en || parsed.tr || c.name;
-          } catch {
-            // fallback to string value
-          }
-          return { id: c.id, name: displayName };
-        })} />
+      <CategoryNav categories={categories.map(c => {
+        // Parse category name for navigation
+        let displayName = c.name;
+        try {
+          const parsed = JSON.parse(c.name);
+          // Get current language preference or fallback to English
+          const currentLang = localStorage.getItem('app_language') || 'en';
+          displayName = parsed[currentLang] || parsed.en || parsed.tr || c.name;
+        } catch {
+          // fallback to string value
+        }
+        return { id: c.id, name: displayName };
+      })} />
+
+      <div className="container mx-auto px-4 pb-8 max-w-5xl">
 
         {categories.length === 0 ? (
           <Card style={getCardStyles()}>

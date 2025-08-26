@@ -12,16 +12,16 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <QrCode className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-bold"><Trans k="appTitle" /></span>
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex justify-between items-center">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <QrCode className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
+              <span className="text-xl sm:text-2xl font-bold"><Trans k="appTitle" /></span>
             </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <LanguageToggle />
             <ThemeToggle />
             <Link href="/auth">
-              <Button><Trans k="getStarted" /></Button>
+              <Button size="sm" className="text-sm sm:text-base px-3 sm:px-4"><Trans k="getStarted" /></Button>
             </Link>
           </div>
         </div>
