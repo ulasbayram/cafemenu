@@ -249,11 +249,12 @@ const MenuMigrationModal = ({
         body: formData,
       });
 
+      const result = await response.json().catch(() => null);
+
       if (!response.ok) {
-        throw new Error('Failed to analyze menu images');
+        throw new Error(result?.error || `Failed to analyze menu images (${response.status})`);
       }
 
-      const result = await response.json();
       if (!result.success) {
         throw new Error(result.error || 'Failed to analyze menu');
       }

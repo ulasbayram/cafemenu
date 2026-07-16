@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown error';
+}
 
 /**
  * API route to process physical menu images using Gemini Vision API
@@ -11,19 +14,22 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 export async function POST(request: NextRequest) {
   try {
     // Check if API key is configured
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
       return NextResponse.json(
-        { error: 'Gemini API key not configured' },
+        { success: false, error: 'GEMINI_API_KEY is not configured on the server' },
         { status: 500 }
       );
     }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     const formData = await request.formData();
     const images = formData.getAll('images') as File[];
 
     if (!images || images.length === 0) {
       return NextResponse.json(
-        { error: 'No images provided' },
+        { success: false, error: 'No images provided' },
         { status: 400 }
       );
     }
@@ -43,7 +49,7 @@ export async function POST(request: NextRequest) {
     const imageData = await Promise.all(imagePromises);
 
     // Initialize Gemini model for vision tasks
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
 
     // Create detailed prompt for menu extraction
     const prompt = `
@@ -103,10 +109,10 @@ Please process all images as parts of the same menu and consolidate the informat
     let menuData;
     try {
       menuData = JSON.parse(cleanedText);
-    } catch (parseError) {
+    } catch {
       console.error('Failed to parse Gemini response:', cleanedText);
       return NextResponse.json(
-        { error: 'Failed to parse menu data from AI response' },
+        { success: false, error: 'Failed to parse menu data from AI response' },
         { status: 500 }
       );
     }
@@ -114,7 +120,7 @@ Please process all images as parts of the same menu and consolidate the informat
     // Validate the response structure
     if (!menuData.categories || !Array.isArray(menuData.categories)) {
       return NextResponse.json(
-        { error: 'Invalid menu data structure returned by AI' },
+        { success: false, error: 'Invalid menu data structure returned by AI' },
         { status: 500 }
       );
     }
@@ -129,7 +135,7 @@ Please process all images as parts of the same menu and consolidate the informat
   } catch (error) {
     console.error('Error processing menu migration:', error);
     return NextResponse.json(
-      { error: 'Failed to process menu images' },
+      { success: false, error: `Failed to process menu images: ${getErrorMessage(error)}` },
       { status: 500 }
     );
   }
