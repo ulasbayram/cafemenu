@@ -82,7 +82,7 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
 
   return (
     <div className="sticky top-0 z-30 mb-4 px-4">
-      <div className="w-full">
+      <div className="mx-auto w-full max-w-5xl">
         <div className="rounded-lg border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
           <div
             ref={containerRef}

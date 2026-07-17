@@ -29,14 +29,16 @@ export default function CafeMenuClient({ cafe, categories }: any) {
     if (typeof field === "string") {
       try {
         const obj = JSON.parse(field);
-        if (obj && (typeof obj.en === "string" || typeof obj.tr === "string")) {
-          return obj[lang] ?? obj.en ?? obj.tr ?? "";
+        if (obj && typeof obj === "object" && ("en" in obj || "tr" in obj)) {
+          const text = obj[lang] ?? obj.en ?? obj.tr ?? "";
+          return typeof text === "string" ? text : "";
         }
       } catch {}
       return field;
     }
-    if (typeof field === "object" && (field.en || field.tr)) {
-      return field[lang] ?? field.en ?? field.tr ?? "";
+    if (typeof field === "object" && ("en" in field || "tr" in field)) {
+      const text = field[lang] ?? field.en ?? field.tr ?? "";
+      return typeof text === "string" ? text : "";
     }
     return field;
   }

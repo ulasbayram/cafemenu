@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from  'next/navigation';
 import { User } from "@supabase/supabase-js";
-import { QrCode, Plus, Coffee, Menu, Settings, Edit, Trash2, Bot, Eye } from "lucide-react";
+import { QrCode, Plus, Coffee, Menu, Settings, Edit, Trash2, Bot, Eye, BarChart3, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import CafeForm from "@/components/CafeForm";
 import MenuManager from "@/components/MenuManager";
@@ -20,15 +20,24 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { Trans } from "@/components/Trans";
 import { slugify } from "@/lib/slug";
 
+type MenuView = {
+  cafe_id: string;
+  viewed_at: string;
+  referrer: string | null;
+  user_agent: string | null;
+};
+
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [cafes, setCafes] = useState<any[]>([]);
   const [viewStats, setViewStats] = useState<{ total: number; byCafe: Record<string, number> }>({ total: 0, byCafe: {} });
+  const [menuViews, setMenuViews] = useState<MenuView[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCafeForm, setShowCafeForm] = useState(false);
   const [editingCafe, setEditingCafe] = useState<any>(null);
   const [selectedCafe, setSelectedCafe] = useState<any>(null);
   const [cafeToDelete, setCafeToDelete] = useState<any>(null);
+  const [analyticsCafe, setAnalyticsCafe] = useState<any>(null);
   const [showMigrationModal, setShowMigrationModal] = useState(false);
   const [migrationCafe, setMigrationCafe] = useState<any>(null);
   const { toast } = useToast();
@@ -76,13 +85,15 @@ const Dashboard = () => {
       const cafeIds = (data || []).map((cafe) => cafe.id);
       if (cafeIds.length === 0) {
         setViewStats({ total: 0, byCafe: {} });
+        setMenuViews([]);
         return;
       }
 
       const { data: views, error: viewsError } = await supabase
         .from("menu_views")
-        .select("cafe_id")
-        .in("cafe_id", cafeIds);
+        .select("cafe_id, viewed_at, referrer, user_agent")
+        .in("cafe_id", cafeIds)
+        .order("viewed_at", { ascending: false });
 
       if (!viewsError) {
         const byCafe = (views || []).reduce<Record<string, number>>((acc, view) => {
@@ -90,6 +101,7 @@ const Dashboard = () => {
           return acc;
         }, {});
         setViewStats({ total: views?.length || 0, byCafe });
+        setMenuViews((views || []) as MenuView[]);
       }
     } catch (error: any) {
       toast({
@@ -182,6 +194,28 @@ const Dashboard = () => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     return `${origin}/${getCafeSlug(cafe)}`;
   };
+
+  const getCafeViews = (cafeId: string) => menuViews.filter((view) => view.cafe_id === cafeId);
+
+  const getAnalyticsSummary = (cafeId: string) => {
+    const views = getCafeViews(cafeId);
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    const today = views.filter((view) => new Date(view.viewed_at) >= startOfToday).length;
+    const last7Days = views.filter((view) => new Date(view.viewed_at) >= sevenDaysAgo).length;
+    const lastView = views[0]?.viewed_at ? new Date(views[0].viewed_at) : null;
+
+    return { total: views.length, today, last7Days, lastView, recent: views.slice(0, 8) };
+  };
+
+  const formatDateTime = (value: Date | string) =>
+    new Intl.DateTimeFormat("tr-TR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(typeof value === "string" ? new Date(value) : value);
 
   if (loading) {
     return (
@@ -330,40 +364,53 @@ const Dashboard = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-auto">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleManageMenu(cafe)}
-                      className="flex-1"
-                    >
-                      <Menu className="h-4 w-4 mr-1" />
-                      <Trans k="manageMenu" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleMigrateMenu(cafe)}
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-none hover:from-blue-600 hover:to-purple-700"
-                      title="Migrate Physical Menu with AI"
-                    >
-                      <Bot className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleEditCafe(cafe)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleDeleteCafe(cafe)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div className="mt-auto space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleManageMenu(cafe)}
+                      >
+                        <Menu className="h-4 w-4 mr-1" />
+                        <Trans k="manageMenu" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setAnalyticsCafe(cafe)}
+                      >
+                        <BarChart3 className="h-4 w-4 mr-1" />
+                        Veri
+                      </Button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleMigrateMenu(cafe)}
+                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white border-none hover:from-blue-600 hover:to-purple-700"
+                        title="Migrate Physical Menu with AI"
+                      >
+                        <Bot className="h-4 w-4 mr-1" />
+                        AI
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditCafe(cafe)}
+                        className="flex-1"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteCafe(cafe)}
+                        className="flex-1 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -388,6 +435,93 @@ const Dashboard = () => {
               setEditingCafe(null);
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!analyticsCafe} onOpenChange={(open) => {
+        if (!open) setAnalyticsCafe(null);
+      }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              {analyticsCafe?.name} Analytics
+            </DialogTitle>
+          </DialogHeader>
+          {analyticsCafe && (() => {
+            const summary = getAnalyticsSummary(analyticsCafe.id);
+            return (
+              <div className="space-y-5">
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Total</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{summary.total}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Today</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{summary.today}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Last 7 Days</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{summary.last7Days}</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Last View</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm font-medium">
+                        {summary.lastView ? formatDateTime(summary.lastView) : "-"}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold">Recent Views</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {getCafeUrl(analyticsCafe)}
+                      </p>
+                    </div>
+                    <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  {summary.recent.length === 0 ? (
+                    <div className="rounded-md bg-muted/40 p-4 text-sm text-muted-foreground">
+                      Bu cafe icin henuz analytics kaydi yok.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {summary.recent.map((view, index) => (
+                        <div
+                          key={`${view.viewed_at}-${index}`}
+                          className="flex items-center justify-between gap-4 rounded-md border px-3 py-2 text-sm"
+                        >
+                          <span>{formatDateTime(view.viewed_at)}</span>
+                          <span className="max-w-[240px] truncate text-muted-foreground">
+                            {view.referrer || "Direct / QR scan"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
