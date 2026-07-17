@@ -9,30 +9,32 @@ import { Trans } from '@/components/Trans'
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState('')
-  const [rate, setRate] = useState('')
+  const [rate, setRate] = useState<{ value: number | null; date: string | null; source: string }>(
+    { value: null, date: null, source: 'Loading' }
+  )
 
   useEffect(() => {
     try {
       const name = localStorage.getItem('dashboard_display_name') || ''
-      const storedRate = localStorage.getItem('exchange_rate_try_per_usd') || ''
       setDisplayName(name)
-      setRate(storedRate)
     } catch {}
+
+    fetch('/api/exchange-rate')
+      .then((response) => response.json())
+      .then((data) => {
+        const nextRate = Number(data.rate)
+        setRate({
+          value: Number.isFinite(nextRate) ? nextRate : null,
+          date: data.date ?? null,
+          source: data.source ?? 'Unknown',
+        })
+      })
+      .catch(() => setRate({ value: null, date: null, source: 'Unavailable' }))
   }, [])
 
   const save = () => {
     try {
       localStorage.setItem('dashboard_display_name', displayName.trim())
-    } catch {}
-  }
-
-  const saveRate = () => {
-    const n = Number(rate)
-    if (!Number.isFinite(n) || n <= 0) return
-    try {
-      localStorage.setItem('exchange_rate_try_per_usd', String(n))
-      const ev = new CustomEvent('currency-rate-change', { detail: { rate: n } })
-      window.dispatchEvent(ev)
     } catch {}
   }
 
@@ -58,12 +60,20 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle><Trans k="currency" /></CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Label htmlFor="rate"><Trans k="exchangeRate" /></Label>
-            <Input id="rate" type="number" step="0.01" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g., 35" />
-            <div>
-              <Button size="sm" onClick={saveRate}><Trans k="saveRate" /></Button>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <Label><Trans k="exchangeRate" /></Label>
+            <div className="rounded-md border bg-muted/30 px-3 py-2">
+              {rate.value ? (
+                <span>1 USD = {rate.value.toFixed(2)} TRY</span>
+              ) : (
+                <span>Exchange rate is temporarily unavailable.</span>
+              )}
             </div>
+            <p>
+              The public menu fetches the latest USD/TRY rate automatically when guests switch to USD.
+              {rate.date ? ` Last rate date: ${rate.date}.` : ''}
+              {rate.source ? ` Source: ${rate.source}.` : ''}
+            </p>
           </CardContent>
         </Card>
       </div>

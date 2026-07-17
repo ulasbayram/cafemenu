@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from  'next/navigation';
 import { User } from "@supabase/supabase-js";
-import { QrCode, Plus, Coffee, Menu, Settings, Edit, Trash2, Bot } from "lucide-react";
+import { QrCode, Plus, Coffee, Menu, Settings, Edit, Trash2, Bot, Eye } from "lucide-react";
 import Link from "next/link";
 import CafeForm from "@/components/CafeForm";
 import MenuManager from "@/components/MenuManager";
@@ -18,10 +18,12 @@ import { QRCode } from "@/components/QRCode";
 import { DashboardDisplayName } from "./DisplayName";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Trans } from "@/components/Trans";
+import { slugify } from "@/lib/slug";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [cafes, setCafes] = useState<any[]>([]);
+  const [viewStats, setViewStats] = useState<{ total: number; byCafe: Record<string, number> }>({ total: 0, byCafe: {} });
   const [loading, setLoading] = useState(true);
   const [showCafeForm, setShowCafeForm] = useState(false);
   const [editingCafe, setEditingCafe] = useState<any>(null);
@@ -70,6 +72,25 @@ const Dashboard = () => {
 
       if (error) throw error;
       setCafes(data || []);
+
+      const cafeIds = (data || []).map((cafe) => cafe.id);
+      if (cafeIds.length === 0) {
+        setViewStats({ total: 0, byCafe: {} });
+        return;
+      }
+
+      const { data: views, error: viewsError } = await supabase
+        .from("menu_views")
+        .select("cafe_id")
+        .in("cafe_id", cafeIds);
+
+      if (!viewsError) {
+        const byCafe = (views || []).reduce<Record<string, number>>((acc, view) => {
+          acc[view.cafe_id] = (acc[view.cafe_id] || 0) + 1;
+          return acc;
+        }, {});
+        setViewStats({ total: views?.length || 0, byCafe });
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -155,6 +176,13 @@ const Dashboard = () => {
     });
   };
 
+  const getCafeSlug = (cafe: any) => cafe.slug || slugify(cafe.name);
+
+  const getCafeUrl = (cafe: any) => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return `${origin}/${getCafeSlug(cafe)}`;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -227,7 +255,15 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Menu Views</CardTitle>
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{viewStats.total}</div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="flex justify-between items-center mb-6">
@@ -266,9 +302,12 @@ const Dashboard = () => {
                   <div className="flex items-start gap-4 mb-4">
                     <div className="shrink-0">
                       <QRCode 
-                        value={`${typeof window !== 'undefined' ? window.location.origin : ''}/${encodeURIComponent(cafe.name)}`}
+                        value={getCafeUrl(cafe)}
                         size={96}
                         className="rounded bg-white p-1 border"
+                        downloadName={`${getCafeSlug(cafe)}-qr`}
+                        label={`${cafe.name} menu`}
+                        showActions
                       />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -278,6 +317,17 @@ const Dashboard = () => {
                         </div>
                         <span className="break-words">{cafe.location || <Trans k="notSpecified" />}</span>
                       </div>
+                      <a
+                        href={getCafeUrl(cafe)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 block truncate text-sm text-primary underline underline-offset-4"
+                      >
+                        /{getCafeSlug(cafe)}
+                      </a>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {viewStats.byCafe[cafe.id] || 0} views
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-2 mt-auto">

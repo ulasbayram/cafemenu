@@ -16,6 +16,7 @@ import { MenuDesign } from "./MenuDesign";
 import { Trans } from "./Trans";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { LanguageToggle } from "./LanguageToggle";
+import { ALLERGEN_OPTIONS, DIETARY_OPTIONS, getMenuTagLabel, normalizeTags } from "@/lib/menu-tags";
 
 interface Cafe {
   id: string;
@@ -40,6 +41,8 @@ interface MenuItem {
   is_available: boolean | null;
   sort_order: number | null;
   image_url: string | null;
+  allergens?: string[] | null;
+  dietary_tags?: string[] | null;
 }
 
 interface MenuManagerProps {
@@ -77,6 +80,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
     category_id: "",
     is_available: true,
     image: null as File | null,
+    allergens: [] as string[],
+    dietary_tags: [] as string[],
   });
 
   const [editForm, setEditForm] = useState({
@@ -89,6 +94,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
     is_available: true,
     image: null as File | null,
     currentImageUrl: "",
+    allergens: [] as string[],
+    dietary_tags: [] as string[],
   });
 
   useEffect(() => {
@@ -119,11 +126,17 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
     try {
       const { data, error } = await supabase
         .from("menu_items")
-        .select("*")
+        .select("*, menu_categories!inner(cafe_id)")
+        .eq("menu_categories.cafe_id", cafe.id)
         .order("sort_order");
 
       if (error) throw error;
-      setMenuItems(data || []);
+      const scopedItems = (data || []).map((row: any) => {
+        const item = { ...row };
+        delete item.menu_categories;
+        return item;
+      });
+      setMenuItems(scopedItems);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -203,6 +216,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
             category_id: itemForm.category_id,
             is_available: itemForm.is_available,
             image_url,
+            allergens: itemForm.allergens,
+            dietary_tags: itemForm.dietary_tags,
             sort_order: menuItems.filter(item => item.category_id === itemForm.category_id).length,
           },
         ]);
@@ -223,6 +238,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
         category_id: "",
         is_available: true,
         image: null,
+        allergens: [],
+        dietary_tags: [],
       });
       setShowItemForm(false);
       fetchMenuItems();
@@ -256,6 +273,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
       is_available: !!item.is_available,
       image: null,
       currentImageUrl: item.image_url || "",
+      allergens: normalizeTags(item.allergens),
+      dietary_tags: normalizeTags(item.dietary_tags),
     });
     } catch { /* ignore */ }
   };
@@ -272,6 +291,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
       is_available: true,
       image: null,
       currentImageUrl: "",
+      allergens: [],
+      dietary_tags: [],
     });
   };
 
@@ -317,6 +338,8 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
           category_id: editForm.category_id,
           is_available: editForm.is_available,
           image_url,
+          allergens: editForm.allergens,
+          dietary_tags: editForm.dietary_tags,
         })
         .eq("id", editingItem.id);
 
@@ -341,6 +364,35 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
   const handleDesignChange = (design: any) => {
     setMenuDesign(design);
   };
+
+  const toggleTag = (selected: string[], value: string) => (
+    selected.includes(value)
+      ? selected.filter((tag) => tag !== value)
+      : [...selected, value]
+  );
+
+  const renderTagButtons = (
+    options: readonly { value: string; label: string }[],
+    selected: string[],
+    onChange: (next: string[]) => void
+  ) => (
+    <div className="flex flex-wrap gap-2">
+      {options.map((option) => {
+        const active = selected.includes(option.value);
+        return (
+          <Button
+            key={option.value}
+            type="button"
+            size="sm"
+            variant={active ? "default" : "outline"}
+            onClick={() => onChange(toggleTag(selected, option.value))}
+          >
+            {option.label}
+          </Button>
+        );
+      })}
+    </div>
+  );
 
   const startEditingCategory = (category: Category) => {
     try {
@@ -768,6 +820,21 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                       })}
                     </select>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Dietary Tags</Label>
+                      {renderTagButtons(DIETARY_OPTIONS, itemForm.dietary_tags, (next) =>
+                        setItemForm(prev => ({ ...prev, dietary_tags: next }))
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Allergens</Label>
+                      {renderTagButtons(ALLERGEN_OPTIONS, itemForm.allergens, (next) =>
+                        setItemForm(prev => ({ ...prev, allergens: next }))
+                      )}
+                    </div>
+                  </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="itemImage"><Trans k="image" /></Label>
@@ -871,6 +938,20 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                     })}
                                   </select>
                                 </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label>Dietary Tags</Label>
+                                    {renderTagButtons(DIETARY_OPTIONS, editForm.dietary_tags, (next) =>
+                                      setEditForm(prev => ({ ...prev, dietary_tags: next }))
+                                    )}
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Allergens</Label>
+                                    {renderTagButtons(ALLERGEN_OPTIONS, editForm.allergens, (next) =>
+                                      setEditForm(prev => ({ ...prev, allergens: next }))
+                                    )}
+                                  </div>
+                                </div>
                                 <div className="space-y-2">
                                     <Label htmlFor={`edit-description-en-${item.id}`}><Trans k="descriptionEnglish" /></Label>
                                     <Textarea
@@ -957,10 +1038,19 @@ const MenuManager = ({ cafe, onBack }: MenuManagerProps) => {
                                       <LangText value={item.description} />
                                     </p>
                                   )}
+                                  {[...normalizeTags(item.dietary_tags), ...normalizeTags(item.allergens)].length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {[...normalizeTags(item.dietary_tags), ...normalizeTags(item.allergens)].map((tag) => (
+                                        <Badge key={tag} variant="outline" className="text-[11px] font-normal">
+                                          {getMenuTagLabel(tag)}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <div className="text-right">
-                                    <div className="text-lg font-semibold">${(item.price ?? 0).toFixed(2)} USD</div>
+                                    <div className="text-lg font-semibold">{"\u20ba"} {(item.price ?? 0).toFixed(2)}</div>
                                   </div>
                                   <div className="flex gap-1">
                                     <Button

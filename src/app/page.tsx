@@ -113,7 +113,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t bg-muted">
         <div className="container mx-auto px-4 py-8 text-center text-muted-foreground">
-          <p>&copy; 2024 QR Menu. Making dining digital.</p>
+          <p>&copy; {new Date().getFullYear()} QR Kafem. Making dining digital.</p>
         </div>
       </footer>
     </div>

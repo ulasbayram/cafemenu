@@ -69,7 +69,9 @@ Please analyze these menu images and extract all menu information. Return the da
           "description_en": "English description",
           "description_tr": "Turkish description (if available, otherwise use English)",
           "price": 25.50,
-          "is_available": true
+          "is_available": true,
+          "dietary_tags": ["vegetarian", "vegan", "spicy", "sugar-free", "halal"],
+          "allergens": ["gluten", "dairy", "nuts", "egg", "soy", "seafood"]
         }
       ]
     }
@@ -82,6 +84,7 @@ Important guidelines:
 - If only one language is available, use that language for both _en and _tr fields
 - Convert all prices to decimal numbers (remove currency symbols)
 - Set is_available to true for all items unless clearly marked as unavailable
+- Include dietary_tags and allergens only when the menu text or item name strongly implies them; otherwise use empty arrays
 - Group items into logical categories (e.g., "Beverages", "Main Dishes", "Desserts")
 - If categories are not clearly defined, create appropriate ones based on the items
 - Be thorough and capture all visible menu information

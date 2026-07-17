@@ -1,10 +1,28 @@
 "use client";
 
+import { useEffect } from "react";
 import StyledMenuPage from "@/components/StyledMenuPage";
 import { useLanguage } from "../AppLayoutClient";
+import { normalizeTags } from "@/lib/menu-tags";
 
 export default function CafeMenuClient({ cafe, categories }: any) {
   const lang = useLanguage();
+
+  useEffect(() => {
+    if (!cafe?.id) return;
+
+    const key = `menu-view:${cafe.id}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+
+    fetch("/api/menu-view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cafeId: cafe.id }),
+      keepalive: true,
+    }).catch(() => {});
+  }, [cafe?.id]);
+
   // Filter bilingual fields
   function parseLangField(field: any, lang: "en" | "tr") {
     if (!field) return "";
@@ -31,6 +49,8 @@ export default function CafeMenuClient({ cafe, categories }: any) {
       ...item,
       name: parseLangField(item.name, lang),
       description: parseLangField(item.description, lang),
+      allergens: normalizeTags(item.allergens),
+      dietary_tags: normalizeTags(item.dietary_tags),
     })),
   }));
 

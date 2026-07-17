@@ -24,6 +24,7 @@ export type Database = {
           menu_design: Json | null
           name: string
           phone: string | null
+          slug: string
           updated_at: string
           user_id: string
           website: string | null
@@ -37,6 +38,7 @@ export type Database = {
           menu_design?: Json | null
           name: string
           phone?: string | null
+          slug?: string
           updated_at?: string
           user_id: string
           website?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           menu_design?: Json | null
           name?: string
           phone?: string | null
+          slug?: string
           updated_at?: string
           user_id?: string
           website?: string | null
@@ -96,9 +99,11 @@ export type Database = {
       }
       menu_items: {
         Row: {
+          allergens: string[]
           category_id: string
           created_at: string
           description: string | null
+          dietary_tags: string[]
           id: string
           image_url: string | null
           is_available: boolean | null
@@ -108,9 +113,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allergens?: string[]
           category_id: string
           created_at?: string
           description?: string | null
+          dietary_tags?: string[]
           id?: string
           image_url?: string | null
           is_available?: boolean | null
@@ -120,9 +127,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allergens?: string[]
           category_id?: string
           created_at?: string
           description?: string | null
+          dietary_tags?: string[]
           id?: string
           image_url?: string | null
           is_available?: boolean | null
@@ -137,6 +146,38 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_views: {
+        Row: {
+          cafe_id: string
+          id: string
+          referrer: string | null
+          user_agent: string | null
+          viewed_at: string
+        }
+        Insert: {
+          cafe_id: string
+          id?: string
+          referrer?: string | null
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          cafe_id?: string
+          id?: string
+          referrer?: string | null
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_views_cafe_id_fkey"
+            columns: ["cafe_id"]
+            isOneToOne: false
+            referencedRelation: "cafes"
             referencedColumns: ["id"]
           },
         ]

@@ -204,6 +204,8 @@ const MenuMigrationModal = ({
               }),
               price: itemData.price || null,
               is_available: itemData.is_available !== false,
+              allergens: Array.isArray(itemData.allergens) ? itemData.allergens : [],
+              dietary_tags: Array.isArray(itemData.dietary_tags) ? itemData.dietary_tags : [],
               sort_order: index,
             }]);
 

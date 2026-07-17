@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode } from "react";
+import { useMemo } from "react";
 import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { LanguageToggle } from "./LanguageToggle";
 import { LangText } from "./LangText";
 import { ThemeToggle } from "./ThemeToggle";
 import CategoryNav from "../app/[cafename]/CategoryNav";
+import { getMenuTagLabel, normalizeTags } from "@/lib/menu-tags";
 
 interface Cafe {
   id: string;
@@ -27,6 +28,8 @@ interface MenuItem {
   image_url: string | null;
   is_available: boolean | null;
   sort_order: number | null;
+  allergens?: string[] | null;
+  dietary_tags?: string[] | null;
 }
 
 interface CategoryWithItems {
@@ -44,6 +47,16 @@ interface StyledMenuPageProps {
 
 export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps) {
   const menuDesign = cafe.menu_design || {};
+
+  const totalItems = useMemo(
+    () => categories.reduce((sum, category) => sum + category.menu_items.length, 0),
+    [categories]
+  );
+
+  const getItemTags = (item: MenuItem) => [
+    ...normalizeTags(item.dietary_tags),
+    ...normalizeTags(item.allergens),
+  ];
 
   // Generate CSS styles from custom design
   const getCustomStyles = () => {
@@ -166,6 +179,7 @@ export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps
                 style={menuDesign?.colors?.textMuted && !isDashboardDefault(menuDesign.colors.textMuted, '#6b7280') ? { color: menuDesign.colors.textMuted } : {}}
               >
                 {cafe.location && <span>{cafe.location}</span>}
+                {totalItems > 0 && <span>{totalItems} items</span>}
                 {cafe.website && (
                   <a
                     href={cafe.website}
@@ -188,19 +202,21 @@ export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps
         </header>
       </div>
 
-      <CategoryNav categories={categories.map(c => {
-        // Parse category name for navigation
-        let displayName = c.name;
-        try {
-          const parsed = JSON.parse(c.name);
-          // Get current language preference or fallback to English
-          const currentLang = localStorage.getItem('app_language') || 'en';
-          displayName = parsed[currentLang] || parsed.en || parsed.tr || c.name;
-        } catch {
-          // fallback to string value
-        }
-        return { id: c.id, name: displayName };
-      })} />
+      {categories.length > 1 && (
+        <CategoryNav categories={categories.map(c => {
+          // Parse category name for navigation
+          let displayName = c.name;
+          try {
+            const parsed = JSON.parse(c.name);
+            // Get current language preference or fallback to English
+            const currentLang = localStorage.getItem('app_language') || 'en';
+            displayName = parsed[currentLang] || parsed.en || parsed.tr || c.name;
+          } catch {
+            // fallback to string value
+          }
+          return { id: c.id, name: displayName };
+        })} />
+      )}
 
       <div className="container mx-auto px-4 pb-8 max-w-5xl">
 
@@ -241,7 +257,7 @@ export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {category.menu_items.map((item) => (
                       <Card key={item.id} className="overflow-hidden" style={getCardStyles()}>
-                        {item.image_url ? (
+                        {item.image_url && (
                           <div className="relative w-full h-40">
                             <Image
                               src={item.image_url}
@@ -251,15 +267,6 @@ export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps
                               className="object-cover"
                               unoptimized
                             />
-                          </div>
-                        ) : (
-                          <div className="w-full h-40 bg-muted flex items-center justify-center">
-                            <span 
-                              className={!menuDesign?.colors?.textMuted || isDashboardDefault(menuDesign.colors.textMuted, '#6b7280') ? 'text-muted-foreground' : ''}
-                              style={menuDesign?.colors?.textMuted && !isDashboardDefault(menuDesign.colors.textMuted, '#6b7280') ? { color: menuDesign.colors.textMuted } : {}}
-                            >
-                              No image
-                            </span>
                           </div>
                         )}
                         <CardHeader className="pb-2">
@@ -280,14 +287,25 @@ export default function StyledMenuPage({ cafe, categories }: StyledMenuPageProps
                             </div>
                           </div>
                         </CardHeader>
-                        {item.description && (
+                        {(item.description || getItemTags(item).length > 0) && (
                           <CardContent className="pt-0">
-                            <p 
-                              className={`${getBodySize()} ${!menuDesign?.colors?.textMuted || isDashboardDefault(menuDesign.colors.textMuted, '#6b7280') ? 'text-muted-foreground' : ''}`}
-                              style={menuDesign?.colors?.textMuted && !isDashboardDefault(menuDesign.colors.textMuted, '#6b7280') ? { color: menuDesign.colors.textMuted } : {}}
-                            >
-                              <LangText value={item.description} />
-                            </p>
+                            {item.description && (
+                              <p 
+                                className={`${getBodySize()} ${!menuDesign?.colors?.textMuted || isDashboardDefault(menuDesign.colors.textMuted, '#6b7280') ? 'text-muted-foreground' : ''}`}
+                                style={menuDesign?.colors?.textMuted && !isDashboardDefault(menuDesign.colors.textMuted, '#6b7280') ? { color: menuDesign.colors.textMuted } : {}}
+                              >
+                                <LangText value={item.description} />
+                              </p>
+                            )}
+                            {getItemTags(item).length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-1.5">
+                                {getItemTags(item).map((tag) => (
+                                  <Badge key={tag} variant="outline" className="text-[11px] font-normal">
+                                    {getMenuTagLabel(tag)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </CardContent>
                         )}
                       </Card>

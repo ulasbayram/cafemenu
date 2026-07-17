@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Trans } from "./Trans";
+import { slugify } from "@/lib/slug";
 
 interface CafeFormProps {
   onSuccess: () => void;
@@ -18,12 +19,14 @@ const CafeForm = ({ onSuccess, onCancel, cafe }: CafeFormProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: cafe?.name || "",
+    slug: cafe?.slug || slugify(cafe?.name || ""),
     description: cafe?.description || "",
     location: cafe?.location || "",
     website: cafe?.website || "",
     email: cafe?.email || "",
     phone: cafe?.phone || "",
   });
+  const [slugTouched, setSlugTouched] = useState(Boolean(cafe?.slug));
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,7 +48,7 @@ const CafeForm = ({ onSuccess, onCancel, cafe }: CafeFormProps) => {
         // Update existing cafe
         const { error } = await supabase
           .from("cafes")
-          .update(formData)
+          .update({ ...formData, slug: slugify(formData.slug || formData.name) })
           .eq("id", cafe.id);
 
         if (error) throw error;
@@ -61,6 +64,7 @@ const CafeForm = ({ onSuccess, onCancel, cafe }: CafeFormProps) => {
           .insert([
             {
               ...formData,
+              slug: slugify(formData.slug || formData.name),
               user_id: user.id,
             },
           ]);
@@ -85,7 +89,13 @@ const CafeForm = ({ onSuccess, onCancel, cafe }: CafeFormProps) => {
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === "name" && !slugTouched) {
+        next.slug = slugify(value);
+      }
+      return next;
+    });
   };
 
   return (
@@ -107,6 +117,23 @@ const CafeForm = ({ onSuccess, onCancel, cafe }: CafeFormProps) => {
               placeholder="My Amazing Cafe"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="slug">Menu URL Slug *</Label>
+            <Input
+              id="slug"
+              value={formData.slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                handleChange("slug", slugify(e.target.value));
+              }}
+              placeholder="my-amazing-cafe"
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Public menu path: /{formData.slug || "my-amazing-cafe"}
+            </p>
           </div>
 
           <div className="space-y-2">

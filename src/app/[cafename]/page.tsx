@@ -5,6 +5,7 @@ import CafeMenuClient from "./CafeMenuClient";
 interface Cafe {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   location: string | null;
   website: string | null;
@@ -18,6 +19,8 @@ interface MenuItem {
   image_url: string | null;
   is_available: boolean | null;
   sort_order: number | null;
+  allergens: string[] | null;
+  dietary_tags: string[] | null;
 }
 
 interface CategoryWithItems {
@@ -37,20 +40,37 @@ export default async function CafeMenuPage({ params }: { params: paramsType }) {
 
   async function fetchData() {
     const supabase = await createClient();
-    const { data: cafe, error: cafeError } = await supabase
+    const cafeSelect = "id, name, slug, description, location, website, menu_design";
+    const { data: slugCafe, error: slugCafeError } = await supabase
       .from("cafes")
-      .select("id, name, description, location, website, menu_design")
-      .eq("name", cafename)
+      .select(cafeSelect)
+      .eq("slug", cafename)
       .single<Cafe & { menu_design?: any }>();
 
-    if (cafeError || !cafe) {
+    let cafe = slugCafe;
+
+    if (slugCafeError || !slugCafe) {
+      const { data: nameCafe, error: nameCafeError } = await supabase
+        .from("cafes")
+        .select(cafeSelect)
+        .eq("name", cafename)
+        .single<Cafe & { menu_design?: any }>();
+
+      if (nameCafeError || !nameCafe) {
+        return { notFound: true };
+      }
+
+      cafe = nameCafe;
+    }
+
+    if (!cafe) {
       return { notFound: true };
     }
 
     const { data: categoriesData, error: categoriesError } = await supabase
       .from("menu_categories")
       .select(
-        "id, name, description, sort_order, menu_items(id, name, description, price, image_url, is_available, sort_order)"
+        "id, name, description, sort_order, menu_items(id, name, description, price, image_url, is_available, sort_order, allergens, dietary_tags)"
       )
       .eq("cafe_id", cafe.id)
       .order("sort_order", { ascending: true });

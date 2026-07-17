@@ -10,6 +10,7 @@ import { LangText } from "./LangText";
 import { LanguageToggle } from "./LanguageToggle";
 import { ThemeToggle } from "./ThemeToggle";
 import Image from "next/image";
+import { getMenuTagLabel, normalizeTags } from "@/lib/menu-tags";
 
 interface Cafe {
   id: string;
@@ -34,6 +35,8 @@ interface MenuItem {
   is_available: boolean | null;
   sort_order: number | null;
   image_url: string | null;
+  allergens?: string[] | null;
+  dietary_tags?: string[] | null;
 }
 
 interface MenuPreviewProps {
@@ -119,9 +122,14 @@ export function MenuPreview({ cafe, categories, menuItems, customDesign }: MenuP
     });
 
   const formatPrice = (price: number | null) => {
-    if (price === null) return "N/A";
-    return `$${price.toFixed(2)}`;
+    if (price === null) return "-";
+    return `\u20ba ${price.toFixed(2)}`;
   };
+
+  const getItemTags = (item: MenuItem) => [
+    ...normalizeTags(item.dietary_tags),
+    ...normalizeTags(item.allergens),
+  ];
 
   // Generate CSS styles from custom design
   const getCustomStyles = () => {
@@ -323,7 +331,7 @@ export function MenuPreview({ cafe, categories, menuItems, customDesign }: MenuP
                   <div className={`grid gap-6 ${viewMode === 'mobile' ? 'grid-cols-1' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
                     {category.menu_items.map((item) => (
                       <Card key={item.id} className="overflow-hidden" style={getCardStyles()}>
-                        {item.image_url ? (
+                        {item.image_url && (
                           <div className="relative w-full h-40">
                             <Image
                               src={item.image_url}
@@ -333,15 +341,6 @@ export function MenuPreview({ cafe, categories, menuItems, customDesign }: MenuP
                               className="object-cover"
                               unoptimized
                             />
-                          </div>
-                        ) : (
-                          <div className="w-full h-40 bg-muted flex items-center justify-center">
-                            <span 
-                              className={!customDesign?.colors?.textMuted || isDashboardDefault(customDesign.colors.textMuted, '#6b7280') ? 'text-muted-foreground' : ''}
-                              style={customDesign?.colors?.textMuted && !isDashboardDefault(customDesign.colors.textMuted, '#6b7280') ? { color: customDesign.colors.textMuted } : {}}
-                            >
-                              No image
-                            </span>
                           </div>
                         )}
                         <CardHeader className="pb-2">
@@ -362,14 +361,25 @@ export function MenuPreview({ cafe, categories, menuItems, customDesign }: MenuP
                             </div>
                           </div>
                         </CardHeader>
-                        {item.description && (
+                        {(item.description || getItemTags(item).length > 0) && (
                           <CardContent className="pt-0">
-                            <p 
-                              className={`${getBodySize()} ${!customDesign?.colors?.textMuted || isDashboardDefault(customDesign.colors.textMuted, '#6b7280') ? 'text-muted-foreground' : ''}`}
-                              style={customDesign?.colors?.textMuted && !isDashboardDefault(customDesign.colors.textMuted, '#6b7280') ? { color: customDesign.colors.textMuted } : {}}
-                            >
-                              <LangText value={item.description} />
-                            </p>
+                            {item.description && (
+                              <p 
+                                className={`${getBodySize()} ${!customDesign?.colors?.textMuted || isDashboardDefault(customDesign.colors.textMuted, '#6b7280') ? 'text-muted-foreground' : ''}`}
+                                style={customDesign?.colors?.textMuted && !isDashboardDefault(customDesign.colors.textMuted, '#6b7280') ? { color: customDesign.colors.textMuted } : {}}
+                              >
+                                <LangText value={item.description} />
+                              </p>
+                            )}
+                            {getItemTags(item).length > 0 && (
+                              <div className="mt-3 flex flex-wrap gap-1.5">
+                                {getItemTags(item).map((tag) => (
+                                  <Badge key={tag} variant="outline" className="text-[11px] font-normal">
+                                    {getMenuTagLabel(tag)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </CardContent>
                         )}
                       </Card>

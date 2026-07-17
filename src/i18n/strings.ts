@@ -1,13 +1,13 @@
 export type TransKey = keyof typeof STRINGS
 
 export const STRINGS = {
-  appTitle: { en: 'QR Menu', tr: 'QR Menü' },
+  appTitle: { en: 'QR Kafem', tr: 'QR Kafem' },
   getStarted: { en: 'Get Started', tr: 'Başla' },
   digitalMenusMadeSimple: { en: 'Digital Menus Made Simple', tr: 'Dijital Menüler Artık Çok Kolay' },
   landingSubtitle: { en: 'Create beautiful QR code menus for your cafe. Let customers scan and browse your menu instantly on their phones.', tr: 'Kafeniz için güzel QR menüler oluşturun. Müşteriler menünüzü anında telefonlarından görüntülesin.' },
   startFreeTrial: { en: 'Start Free Trial', tr: 'Ücretsiz Denemeye Başla' },
   learnMore: { en: 'Learn More', tr: 'Daha Fazla Bilgi' },
-  whyChoose: { en: 'Why Choose QR Menu?', tr: 'Neden QR Menü?' },
+  whyChoose: { en: 'Why Choose QR Kafem?', tr: 'Neden QR Kafem?' },
   easyQRGeneration: { en: 'Easy QR Generation', tr: 'Kolay QR Oluşturma' },
   easyQRGenerationDesc: { en: 'Generate QR codes instantly for each table or location in your cafe.', tr: 'Kafenizdeki her masa veya konum için anında QR kodları oluşturun.' },
   mobileOptimized: { en: 'Mobile Optimized', tr: 'Mobil İçin Optimize' },
@@ -22,9 +22,9 @@ export const STRINGS = {
   step3Title: { en: 'Customers Scan & Order', tr: 'Müşteriler Taramaya Başlar' },
   step3Desc: { en: 'Customers scan the QR code and browse your menu on their phones.', tr: 'Müşteriler QR kodu tarar ve menünüzü telefonlarından inceler.' },
   readyToGoDigital: { en: 'Ready to Go Digital?', tr: 'Dijitale Geçmeye Hazır mısınız?' },
-  joinHundreds: { en: 'Join hundreds of cafes already using QR Menu to serve their customers better.', tr: 'Müşterilerine daha iyi hizmet vermek için QR Menüyü kullanan yüzlerce kafeye katılın.' },
+  joinHundreds: { en: 'Join cafes already using QR Kafem to serve their customers better.', tr: 'Musterilerine daha iyi hizmet vermek icin QR Kafem kullanan kafelere katilin.' },
     // Dashboard specific translations
-    dashboardTitle: { en: 'QR Menu Dashboard', tr: 'QR Menü Paneli' },
+    dashboardTitle: { en: 'QR Kafem Dashboard', tr: 'QR Kafem Paneli' },
     settings: { en: 'Settings', tr: 'Ayarlar' },
     signOut: { en: 'Sign Out', tr: 'Çıkış Yap' },
     welcomeToDashboard: { en: 'Welcome to your cafe dashboard', tr: 'Kafe panelinize hoş geldiniz' },
@@ -97,7 +97,7 @@ export const STRINGS = {
     descriptionEnglishPlaceholder: { en: 'Fresh romaine lettuce with parmesan cheese and croutons...', tr: 'Parmesan peyniri ve krutonlu taze marul...' },
     descriptionTurkish: { en: 'Açıklama (Türkçe)', tr: 'Açıklama (Türkçe)' },
     descriptionTurkishPlaceholder: { en: 'Parmesan ve krutonlu taze marul...', tr: 'Parmesan ve krutonlu taze marul...' },
-    priceUSD: { en: 'Price (USD)', tr: 'Fiyat (USD)' },
+    priceUSD: { en: 'Price', tr: 'Fiyat' },
     pricePlaceholder: { en: '12.99', tr: '12.99' },
     available: { en: 'Available', tr: 'Mevcut' },
     category: { en: 'Category', tr: 'Kategori' },
